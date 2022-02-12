@@ -7,6 +7,13 @@ COPY frontend .
 RUN git config --global url.https://github.com/.insteadOf git@github.com: \
     && npm install --ignore-scripts
 
+# ACCEPT BUILD ARGS
+ARG TM_APP_API_URL
+ARG TM_IMPORT_MAX_FILESIZE
+ARG TM_CONSUMER_KEY
+ARG TM_CONSUMER_SECRET
+ARG TM_ORG_LOGO
+
 # SERVE
 COPY tasking-manager.env ..
 RUN npm run build
