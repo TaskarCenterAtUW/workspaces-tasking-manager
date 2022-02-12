@@ -7,5 +7,5 @@
 **/venv
 docs-old/
 docs/
-frontend/
+#frontend/
 logs/
