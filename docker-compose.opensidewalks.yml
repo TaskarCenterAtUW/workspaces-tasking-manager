@@ -1,0 +1,46 @@
+version: "3.4"
+
+services:
+  backend:
+    environment:
+      GUNICORN_CMD_ARGS: "--workers 5 --threads 5 --timeout 179"
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.backend.rule=Host(`${TM_APP_BASE_URL}`) && PathPrefix(`/api/`)
+      - traefik.http.routers.backend.entrypoints=websecure
+      - traefik.http.routers.backend.tls.certresolver=myresolver
+
+  frontend:
+    build:
+      args:
+        - TM_APP_API_URL
+        - TM_IMPORT_MAX_FILESIZE
+        - TM_CONSUMER_KEY
+        - TM_CONSUMER_SECRET
+        - TM_ORG_LOGO
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.frontend.rule=Host(`${TM_APP_BASE_URL}`)
+      - traefik.http.services.frontend.loadbalancer.server.port=80
+      - traefik.http.routers.frontend.entrypoints=websecure
+      - traefik.http.routers.frontend.tls.certresolver=myresolver
+
+  postgresql:
+    volumes:
+      - /opt/postgres/var/lib/postgresql/data:/var/lib/postgresql/data
+
+  traefik:
+     ports:
+       - "443:443"
+     volumes:
+       - /opt/traefik/acme.json:/letsencrypt/acme.json
+     command:
+       - --entrypoints.web.address=:80
+       - --entrypoints.web.http.redirections.entryPoint.to=websecure
+       - --entrypoints.websecure.address=:443
+       - --api.insecure=true
+       - --providers.docker=true
+       - --providers.docker.exposedbydefault=false
+       - --certificatesresolvers.myresolver.acme.tlschallenge=true
+       - --certificatesresolvers.myresolver.acme.email=${TM_ACME_EMAIL}
+       - --certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json
