@@ -1,5 +1,34 @@
 # Tasking Manager
 
+## OpenSidewalks Fork
+
+This repository is a fork of the
+[tasking manager](https://github.com/hotosm/tasking-manager/) developed by the
+[Humanitarian OpenStreetMap Team](https://www.hotosm.org/).
+
+We forked the tasking manager for two reasons:
+
+1. We wanted to deploy using the provided `docker-compose` strategy and found
+it to be non-working. This fork includes patches that make it functional for
+our purposes, primarily the use of `ARG` in `Dockerfile`s so that environment
+variables can be passed during front end builds and documentation on when to
+use `--env-file` (for the same reason).
+
+2. Most branding and custom descriptions on the home page are currently
+impossible without editing the codebase - there was no way to remove language
+specific to the Humanitarian OpenStreetMap team and add language about our
+use of the tasking manager. Most projects using the tasking manager seem to
+fork it for this reason.
+
+### Docs
+
+Documentation on deploying this tasking manager is found in
+the [OPENSIDEWALKS_SETUP](OPENSIDEWALKS_SETUP.md) markdown file. This is only
+partial documentation: we recommended reading
+[the upstream docker setup docs](docs/setup-docker.md) first.
+
+## The upstream README continues here
+
 [![hotosm](https://dl.circleci.com/status-badge/img/gh/hotosm/tasking-manager/tree/develop.svg?style=shield)](https://dl.circleci.com/status-badge/redirect/gh/hotosm/tasking-manager/tree/develop)
 [![TM Backend on Quay](https://quay.io/repository/hotosm/tasking-manager/status "Tasking Manager Backend Build")](https://quay.io/repository/hotosm/tasking-manager)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=hotosm_tasking-manager&metric=alert_status)](https://sonarcloud.io/dashboard?id=hotosm_tasking-manager)
