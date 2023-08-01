@@ -15,6 +15,10 @@
     max-width: 28.5rem;
     line-height: 1.28;
   }
+
+  img {
+    filter: brightness(0.75);
+  }
 }
 
 .stats-container {
