@@ -6,12 +6,12 @@ import { defineMessages } from 'react-intl';
 export default defineMessages({
   jumbotronTitle: {
     id: 'home.mainSection.title',
-    defaultMessage: 'Map for people in need',
+    defaultMessage: 'Map for the complete trip',
   },
   jumbotronHeadLine: {
     id: 'home.mainSection.lead',
     defaultMessage:
-      'Join a global community that is mapping the places most vulnerable to disaster and poverty in order to support humanitarian aid and sustainable development across the world.',
+      'Join a global community that is mapping for all travel experiences.',
   },
   secJumbotronTitle: {
     id: 'home.callToAction.title',
