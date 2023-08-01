@@ -1,5 +1,6 @@
 .jumbotron-primary {
   height: 600px;
+  text-shadow: 0 0 1rem #A0D;
 
   @media screen and (max-width: 30em) {
     height: 500px;
@@ -14,6 +15,7 @@
   p {
     max-width: 28.5rem;
     line-height: 1.28;
+    font-weight: 500;
   }
 
   img {
