@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import * as iD from '@hotosm/id';
-import '@hotosm/id/dist/iD.css';
+import 'iD/dist/iD.css';
 
 import { OSM_CLIENT_ID, OSM_CLIENT_SECRET, OSM_REDIRECT_URI, OSM_SERVER_URL } from '../config';
 
 export default function Editor({ setDisable, comment, presets, imagery, gpxUrl }) {
   const dispatch = useDispatch();
+  const [iDLoaded, setIDLoaded] = useState(window.iD !== undefined)
   const session = useSelector((state) => state.auth.session);
   const iDContext = useSelector((state) => state.editor.context);
   const locale = useSelector((state) => state.preferences.locale);
@@ -14,6 +14,15 @@ export default function Editor({ setDisable, comment, presets, imagery, gpxUrl }
   const windowInit = typeof window !== 'undefined';
   const customSource =
     iDContext && iDContext.background() && iDContext.background().findSource('custom');
+
+  useEffect(() => {
+    const script = document.createElement('script')
+    script.src = '/static/id/iD.min.js'
+    script.async = true
+    script.onload = () => setIDLoaded(true)
+
+    document.body.appendChild(script)
+  });
 
   useEffect(() => {
     if (!customImageryIsSet && imagery && customSource) {
@@ -39,7 +48,7 @@ export default function Editor({ setDisable, comment, presets, imagery, gpxUrl }
   }, []);
 
   useEffect(() => {
-    if (windowInit) {
+    if (windowInit && iDLoaded) {
       dispatch({ type: 'SET_VISIBILITY', isVisible: false });
       if (iDContext === null) {
         // we need to keep iD context on redux store because iD works better if
@@ -47,7 +56,7 @@ export default function Editor({ setDisable, comment, presets, imagery, gpxUrl }
         dispatch({ type: 'SET_EDITOR', context: window.iD.coreContext() });
       }
     }
-  }, [windowInit, iDContext, dispatch]);
+  }, [windowInit, iDLoaded, iDContext, dispatch]);
 
   useEffect(() => {
     if (iDContext && comment) {
@@ -56,7 +65,7 @@ export default function Editor({ setDisable, comment, presets, imagery, gpxUrl }
   }, [comment, iDContext]);
 
   useEffect(() => {
-    if (session && locale && iD && iDContext) {
+    if (session && locale && iDContext) {
       // if presets is not a populated list we need to set it as null
       try {
         if (presets.length) {
