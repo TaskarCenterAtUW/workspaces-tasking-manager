@@ -41,7 +41,10 @@ RUN apk update && \
         geos-dev \
         proj-util \
         proj-dev \
-        make
+        make \
+        gfortran \
+        cmake \
+        openblas-dev
 # Setup backend Python dependencies
 COPY --from=extract-deps \
     /opt/python/requirements.txt /opt/python/
@@ -63,7 +66,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # Setup backend runtime dependencies
 RUN apk update && \
     apk add --no-cache \
-        postgresql-libs geos proj-util
+        postgresql-libs geos proj-util openblas libgomp
 COPY --from=build \
     /root/.local \
     /home/appuser/.local
