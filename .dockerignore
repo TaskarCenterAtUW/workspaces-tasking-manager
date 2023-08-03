@@ -7,5 +7,12 @@
 **/venv
 docs-old/
 docs/
-#frontend/
+frontend/node_modules/
+frontend/build/
+frontend/public/static/
+frontend/assets/styles/
+frontend/package-lock.json
+frontend/.env
+frontend/.eslintcache
+frontend/coverage/
 logs/
