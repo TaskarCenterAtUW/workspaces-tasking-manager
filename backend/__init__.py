@@ -388,6 +388,15 @@ def add_api_endpoints(app):
     from backend.api.system.applications import SystemApplicationsRestAPI
     from backend.api.system.image_upload import SystemImageUploadRestAPI
 
+    # TDEI Workspaces
+    from backend.api.workspaces.resources import (
+        WorkspacesRestAPI,
+        WorkspacesMineAPI,
+        WorkspacesListAPI,
+        WorkspacesStaticQuestAPI,
+        WorkspacesLongFormQuestAPI
+    )
+
     # Projects REST endpoint
     api.add_resource(ProjectsAllAPI, format_url("projects/"), methods=["GET"])
     api.add_resource(
@@ -988,3 +997,26 @@ def add_api_endpoints(app):
         SystemContactAdminRestAPI, format_url("system/contact-admin/"), methods=["POST"]
     )
     api.add_resource(SystemReleaseAPI, format_url("system/release/"), methods=["POST"])
+
+    # Workspaces REST endpoint
+    api.add_resource(
+        WorkspacesListAPI,
+        format_url("workspaces"),
+        methods=["GET", "POST"]
+    )
+    api.add_resource(WorkspacesMineAPI, format_url("workspaces/mine"), methods=["GET"])
+    api.add_resource(
+        WorkspacesRestAPI,
+        format_url("workspaces/<int:workspace_id>"),
+        methods=["GET", "PATCH", "DELETE"],
+    )
+    api.add_resource(
+        WorkspacesStaticQuestAPI,
+        format_url("workspaces/<int:workspace_id>/quests/static"),
+        methods=["GET", "PUT"]
+    )
+    api.add_resource(
+        WorkspacesLongFormQuestAPI,
+        format_url("workspaces/<int:workspace_id>/quests/long"),
+        methods=["GET", "PUT"]
+    )

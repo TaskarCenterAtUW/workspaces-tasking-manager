@@ -80,7 +80,8 @@ COPY manage.py .
 FROM runtime as debug
 RUN pip install --user --no-warn-script-location \
     --no-cache-dir debugpy==1.6.7
-CMD ["python", "-m", "debugpy", "--wait-for-client", "--listen", "0.0.0.0:5678", \
+#CMD ["python", "-m", "debugpy", "--wait-for-client", "--listen", "0.0.0.0:5678", \
+CMD ["python", "-m", "debugpy", "--listen", "0.0.0.0:5678", \
     "-m", "gunicorn", "-c", "python:backend.gunicorn", "manage:application", \
     "--reload", "--log-level", "error"]
 
