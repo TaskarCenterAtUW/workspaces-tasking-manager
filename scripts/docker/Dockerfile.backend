@@ -7,6 +7,7 @@ ARG DOCKERFILE_VERSION=0.5.0
 ARG ALPINE_IMG_TAG
 ARG PYTHON_IMG_TAG
 ARG MAINTAINER=sysadmin@hotosm.org
+ARG APP_UID=9000
 LABEL org.hotosm.tasks.app-version="${APP_VERSION}" \
       org.hotosm.tasks.debian-img-tag="${DEBIAN_IMG_TAG}" \
       org.hotosm.tasks.python-img-tag="${PYTHON_IMG_TAG}" \
@@ -16,7 +17,7 @@ LABEL org.hotosm.tasks.app-version="${APP_VERSION}" \
 # Fix timezone (do not change - see issue #3638)
 ENV TZ UTC
 # Add non-root user, permissions, init log dir
-RUN useradd --uid 9000 --create-home --home /home/appuser --shell /bin/false appuser
+RUN useradd --uid $APP_UID --create-home --home /home/appuser --shell /bin/false appuser
 
 
 
@@ -26,7 +27,9 @@ RUN pip install --no-cache-dir --upgrade pip
 WORKDIR /opt/python
 COPY pyproject.toml pdm.lock README.md /opt/python/
 RUN pip install --no-cache-dir pdm==2.7.4
-RUN pdm export --prod --without-hashes > requirements.txt
+# Creeate venv first--a bug causes pdm to output venv messages to requirements.txt:
+RUN pdm venv create \
+ && pdm export -v --prod --without-hashes > requirements.txt
 
 
 
@@ -76,7 +79,6 @@ COPY scripts/database scripts/database/
 COPY manage.py .
 
 
-
 FROM runtime as debug
 RUN pip install --user --no-warn-script-location \
     --no-cache-dir debugpy==1.6.7
@@ -92,6 +94,7 @@ FROM runtime as prod
 USER root
 RUN python -c "import compileall; compileall.compile_path(maxlevels=10, quiet=1)"
 RUN python -m compileall .
+RUN chown -R appuser:appuser .
 USER appuser:appuser
 CMD ["gunicorn", "-c", "python:backend.gunicorn", "manage:application", \
     "--workers", "1", "--log-level", "error"]

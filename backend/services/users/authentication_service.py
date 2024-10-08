@@ -26,6 +26,18 @@ def handle_unauthorized_token():
 
 @token_auth.verify_token
 def verify_token(token):
+    user_id = verify_tdei_token(token)
+
+    if user_id:
+        return user_id
+
+    return verify_osm_token
+
+
+def verify_tdei_token(token):
+    return False
+
+def verify_osm_token(token):
     """Verify the supplied token and check user role is correct for the requested resource"""
     tm.authenticated_user_id = None
     if not token:

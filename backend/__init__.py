@@ -1012,7 +1012,7 @@ def add_api_endpoints(app):
     )
     api.add_resource(
         WorkspacesStaticQuestAPI,
-        format_url("workspaces/<int:workspace_id>/quests/static"),
+        format_url("workspaces/<int:workspace_id>/quests"),
         methods=["GET", "PUT"]
     )
     api.add_resource(
