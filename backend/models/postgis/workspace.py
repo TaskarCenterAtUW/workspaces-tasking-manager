@@ -1,4 +1,3 @@
-import uuid
 from geoalchemy2 import Geometry
 from sqlalchemy.dialects.postgresql import UUID
 
@@ -13,16 +12,20 @@ class Workspace(db.Model):
     __tablename__ = "workspaces"
 
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.Unicode)
+    type = db.Column(db.Unicode, nullable=False)
+    title = db.Column(db.Unicode, nullable=False)
     description = db.Column(db.Unicode)
-    tdeiRecordId = db.Column(UUID(as_uuid=True), default=uuid.uuid4)
-    tdeiProjectGroupId = db.Column(UUID(as_uuid=True), default=uuid.uuid4)
-    tdeiServiceId = db.Column(UUID(as_uuid=True), default=uuid.uuid4)
+    tdeiProjectGroupId = db.Column(UUID(as_uuid=True), nullable=False)
+    tdeiRecordId = db.Column(UUID(as_uuid=True))
+    tdeiServiceId = db.Column(UUID(as_uuid=True))
     tdeiMetadata = db.Column(db.Unicode)
-    createdAt = db.Column(db.DateTime, default=timestamp)
-    createdBy = db.Column(UUID(as_uuid=True), default=uuid.uuid4)
+    createdAt = db.Column(db.DateTime, nullable=False, default=timestamp)
+    createdBy = db.Column(UUID(as_uuid=True), nullable=False)
     createdByName = db.Column(db.Unicode)
     geometry = db.Column(Geometry("MULTIPOLYGON", srid=4326))
+    # GoInfoGame visibility: 0 = none, 1 = public, 2 = project group
+    externalAppAccess = db.Column(db.SmallInteger, nullable=False, default=0)
+    kartaViewToken = db.Column(db.Unicode)
 
     def create(self):
         """Creates and saves the current model to the DB"""
@@ -41,6 +44,7 @@ class Workspace(db.Model):
     def as_dto(self):
         dto = WorkspaceDTO()
         dto.id = self.id
+        dto.type = self.type
         dto.title = self.title
         dto.description = self.description
         dto.tdeiRecordId = self.tdeiRecordId
@@ -50,5 +54,7 @@ class Workspace(db.Model):
         dto.createdAt = self.createdAt
         dto.createdBy = self.createdBy
         dto.createdByName = self.createdByName
+        dto.externalAppAccess = self.externalAppAccess
+        dto.kartaViewToken = self.kartaViewToken
 
         return dto
