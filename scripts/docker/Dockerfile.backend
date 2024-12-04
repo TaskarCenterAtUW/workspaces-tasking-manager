@@ -27,7 +27,7 @@ RUN pip install --no-cache-dir --upgrade pip
 WORKDIR /opt/python
 COPY pyproject.toml pdm.lock README.md /opt/python/
 RUN pip install --no-cache-dir pdm==2.7.4
-# Creeate venv first--a bug causes pdm to output venv messages to requirements.txt:
+# Create venv first--a bug causes pdm to output venv messages to requirements.txt:
 RUN pdm venv create \
  && pdm export -v --prod --without-hashes > requirements.txt
 

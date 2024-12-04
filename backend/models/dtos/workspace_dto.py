@@ -9,6 +9,7 @@ from schematics.types import (
 
 class WorkspaceDTO(Model):
     id = IntType()
+    type = StringType()
     title = StringType(required=True)
     description = StringType()
     tdeiRecordId = UUIDType()
@@ -18,3 +19,5 @@ class WorkspaceDTO(Model):
     createdAt = UTCDateTimeType()
     createdBy = UUIDType()
     createdByName = StringType()
+    externalAppAccess = IntType()
+    kartaViewToken = StringType()
