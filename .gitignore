@@ -1,6 +1,6 @@
 
 # Configuration files #
-tasking-manager*.env
+#tasking-manager*.env # TDEI Workspaces uses this file as a template
 
 # Generated frontend #
 frontend/node_modules/
