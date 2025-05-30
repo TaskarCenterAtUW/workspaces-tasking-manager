@@ -1,5 +1,10 @@
 import json
 import geojson
+
+from typing import cast
+from geoalchemy2 import Geometry, Geography
+from geoalchemy2.functions import ST_GeomFromGeoJSON, ST_SetSRID, ST_MakePoint, ST_Buffer, ST_Intersects
+
 from flask import Response, jsonify
 from flask_restful import Resource, current_app, request
 from schematics.exceptions import DataError
@@ -8,7 +13,6 @@ from backend.models.postgis.utils import NotFound
 from backend.models.postgis.workspace import Workspace
 from backend.models.postgis.workspace_long_quest import WorkspaceLongQuest
 from backend.services.workspaces_service import WorkspacesService
-
 
 class WorkspacesRestAPI(Resource):
     def get(self, workspace_id: int):
@@ -43,21 +47,69 @@ class WorkspacesRestAPI(Resource):
         except NotFound:
             return {"Error": "Workspace not found", "SubCode": "NotFound"}, 404
 
-
+# filter these once auth is working
 class WorkspacesMineAPI(Resource):
     def get(self):
-        return [w.as_dto().to_primitive() for w in WorkspacesService.list_workspaces()]
-
+        return WorkspacesListAPI.get(self)
 
 class WorkspacesListAPI(Resource):
     def get(self):
-        externalAppOnly = 'gig_only' in request.args
+        externalAppOnly = False
+        
+        if 'gig_only' in request.args:
+            externalAppOnly = (request.args['gig_only'] == "True")
 
-        return [
-            w.as_dto().to_primitive()
-            for w
-            in WorkspacesService.list_workspaces(externalAppOnly)
-        ]
+        if 'externalAppAccess' in request.args:
+            externalAppOnly = (request.args['externalAppAccess'] == "True")
+        
+        r = []
+        for w in WorkspacesService.list_workspaces(externalAppOnly):
+            tdeiMetadata = {};
+            
+            if 'lat' in request.args and 'lon' in request.args:
+                try:
+                    if w.tdeiMetadata is not None:
+                        tdeiMetadata = json.loads(w.tdeiMetadata)
+                except json.JSONDecodeError as e:
+                    pass
+                    
+                if ('metadata' in tdeiMetadata and
+                    'dataset_detail' in tdeiMetadata['metadata'] and
+                    'dataset_area' in tdeiMetadata['metadata']['dataset_detail']):
+                        dataset_area = tdeiMetadata['metadata']['dataset_detail']['dataset_area'];
+
+                        if dataset_area is not None:
+                            dataset_area_object = geojson.loads(json.dumps(dataset_area));
+
+                            for feature in dataset_area_object['features']:
+                                datasetAreaGeom = ST_GeomFromGeoJSON(feature['geometry'])
+                                userLocationGeom = ST_SetSRID(ST_MakePoint(request.args['lon'], request.args['lat']), 4326)
+
+                                if 'radius' in request.args:
+                                    try:
+                                        userLocationGeom = cast(ST_Buffer(cast(
+                                            ST_SetSRID(ST_MakePoint(request.args['lon'], request.args['lat']), 4326), 
+                                            Geography), int(request.args['radius'])), Geometry)
+                                    except ValueError:
+                                        pass
+                            
+                                # dataset area intersects with user location
+                                if ST_Intersects(datasetAreaGeom, userLocationGeom) == True:
+                                    r.append(w.as_dto().to_primitive())
+
+                        # dataset has no area, so include (FIXME?)
+                        else:
+                            r.append(w.as_dto().to_primitive())
+
+                # dataset has no metadata, include
+                else:
+                    r.append(w.as_dto().to_primitive())
+                    
+            # no user location provided, so include
+            else:
+                r.append(w.as_dto().to_primitive())
+            
+        return r
 
     def post(self):
         try:
