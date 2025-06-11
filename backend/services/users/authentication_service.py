@@ -52,7 +52,6 @@ def verify_token(token):
 
     return verify_osm_token
 
-
 def verify_tdei_token(token):
     return False
 

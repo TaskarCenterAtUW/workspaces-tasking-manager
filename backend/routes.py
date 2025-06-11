@@ -39,6 +39,8 @@ from backend.api.users import openstreetmap as users_openstreetmap
 from backend.api.users import resources as user_resources
 from backend.api.users import statistics as user_statistics
 from backend.api.users import tasks as users_tasks
+from backend.api.workspaces import resources as workspaces_resources
+
 
 v2 = APIRouter(prefix="/api/v2")
 
@@ -110,5 +112,8 @@ def add_api_end_points(api):
     v2.include_router(issue_resources.router)
     v2.include_router(partners_resources.router)
     v2.include_router(partners_statistics.router)
+
+    # Workspaces REST endpoint
+    v2.include_router(workspaces_resources.router)
 
     api.include_router(v2)

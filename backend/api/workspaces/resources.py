@@ -5,26 +5,51 @@ from typing import cast
 from geoalchemy2 import Geometry, Geography
 from geoalchemy2.functions import ST_GeomFromGeoJSON, ST_SetSRID, ST_MakePoint, ST_Buffer, ST_Intersects
 
-from flask import Response, jsonify
-from flask_restful import Resource, current_app, request
-from schematics.exceptions import DataError
-
 from backend.models.postgis.utils import NotFound
 from backend.models.postgis.workspace import Workspace
 from backend.models.postgis.workspace_long_quest import WorkspaceLongQuest
 from backend.services.workspaces_service import WorkspacesService
 
-class WorkspacesRestAPI(Resource):
-    def get(self, workspace_id: int):
+from fastapi import APIRouter, Depends, Request
+from fastapi.responses import JSONResponse
+
+from databases import Database
+
+from backend.db import get_db
+from backend.models.dtos.user_dto import AuthUserDTO, UserSearchQuery
+from backend.services.project_service import ProjectService
+from backend.services.users.authentication_service import login_required
+from backend.services.users.user_service import UserService
+
+router = APIRouter(
+    prefix="/workspaces",
+    tags=["workspaces"],
+    responses={404: {"description": "Not found"}},
+)
+
+class WorkspacesRestAPI():
+    @router.get("/{workspace_id}")
+    def get(
+        request: Request,
+        workspace_id: int,
+        request_user: AuthUserDTO = Depends(login_required),
+        db: Database = Depends(get_db)
+    ):
         try:
-            return WorkspacesService.get_workspace(workspace_id).as_dto().to_primitive()
+            return WorkspacesService.get_workspace(workspace_id, db).as_dto().to_primitive()
         except NotFound:
             return {"Error": "Workspace not found", "SubCode": "NotFound"}, 404
 
-    def patch(self, workspace_id: int):
+    @router.patch("/{workspace_id}")
+    def patch(
+        request: Request,
+        workspace_id: int,
+        request_user: AuthUserDTO = Depends(login_required),
+        db: Database = Depends(get_db)
+    ):
         try:
             payload = request.get_json()
-            workspace = WorkspacesService.get_workspace(workspace_id)
+            workspace = WorkspacesService.get_workspace(workspace_id, db)
 
             if "title" in payload:
                 workspace.title = payload["title"]
@@ -33,27 +58,43 @@ class WorkspacesRestAPI(Resource):
             if "externalAppAccess" in payload:
                 workspace.externalAppAccess = payload["externalAppAccess"]
 
-            workspace.update()
+            workspace.update(db)
 
             return Response(status=204)
 
         except NotFound:
             return {"Error": "Workspace not found", "SubCode": "NotFound"}, 404
 
-    def delete(self, workspace_id: int):
+    @router.delete("/{workspace_id}")
+    def delete(
+        request: Request,
+        workspace_id: int,
+        request_user: AuthUserDTO = Depends(login_required),
+        db: Database = Depends(get_db)
+    ):
         try:
-            WorkspacesService.delete_workspace(workspace_id)
+            WorkspacesService.delete_workspace(workspace_id, db)
             return Response(status=204)
         except NotFound:
             return {"Error": "Workspace not found", "SubCode": "NotFound"}, 404
 
 # filter these once auth is working
-class WorkspacesMineAPI(Resource):
-    def get(self):
-        return WorkspacesListAPI.get(self)
+class WorkspacesMineAPI():
+    @router.get("/mine")
+    def get(
+        request: Request,
+        request_user: AuthUserDTO = Depends(login_required),
+        db: Database = Depends(get_db)    
+    ):
+        return WorkspacesListAPI.get(request, request_user, db)
 
-class WorkspacesListAPI(Resource):
-    def get(self):
+class WorkspacesListAPI():
+    @router.get("/")
+    def get(
+        request: Request,
+        request_user: AuthUserDTO = Depends(login_required),
+        db: Database = Depends(get_db)    
+    ):
         externalAppOnly = False
         
         if 'gig_only' in request.args:
@@ -63,7 +104,7 @@ class WorkspacesListAPI(Resource):
             externalAppOnly = (request.args['externalAppAccess'] == "True")
         
         r = []
-        for w in WorkspacesService.list_workspaces(externalAppOnly):
+        for w in WorkspacesService.list_workspaces(externalAppOnly, db):
             tdeiMetadata = {};
             
             if 'lat' in request.args and 'lon' in request.args:
@@ -111,7 +152,12 @@ class WorkspacesListAPI(Resource):
             
         return r
 
-    def post(self):
+    @router.post("/")
+    def post(
+        request: Request,
+        request_user: AuthUserDTO = Depends(login_required),
+        db: Database = Depends(get_db)       
+    ):
         try:
             payload = request.get_json()
             workspace = Workspace()
@@ -129,13 +175,18 @@ class WorkspacesListAPI(Resource):
             current_app.logger.error(f"error validating request: {str(e)}")
             return {"Error": "Unable to create workspace", "SubCode": "InvalidData"}, 400
 
-        workspace.create()
+        workspace.create(db)
 
         return {"workspaceId": workspace.id}, 201
 
 
-class WorkspacesStaticQuestAPI(Resource):
-  def get(self, workspace_id: int):
+class WorkspacesStaticQuestAPI():
+  def get(
+      request: Request,
+      workspace_id: int,
+      request_user: AuthUserDTO = Depends(login_required),
+      db: Database = Depends(get_db)              
+  ):
         return jsonify([
             "AddCrossingMarking",
             "AddCrossingRamps",
@@ -152,11 +203,11 @@ class WorkspacesStaticQuestAPI(Resource):
         ])
 
 
-class WorkspacesLongFormQuestAPI(Resource):
+class WorkspacesLongFormQuestAPI():
     def get(self, workspace_id: int):
         try:
             return Response(
-                response=WorkspacesService.get_workspace_long_form_quest(workspace_id).definition,
+                response=WorkspacesService.get_workspace_long_form_quest(workspace_id, db).definition,
                 status=200,
                 mimetype="application/json"
             )
@@ -165,5 +216,5 @@ class WorkspacesLongFormQuestAPI(Resource):
 
     def put(self, workspace_id: int):
         definitionJson = request.get_data(True, True)
-        WorkspacesService.save_long_form_quest(workspace_id, definitionJson)
+        WorkspacesService.save_long_form_quest(workspace_id, definitionJson, db)
         return Response(status=204)
