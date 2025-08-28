@@ -1,68 +1,42 @@
 # Tasking Manager
 
-## OpenSidewalks Fork
+### Dev Setup
+1. Download the proper .env file from the TCAT Lab Google Drive: https://drive.google.com/drive/folders/1CDr-Xn1GuCatGq5i5txj_htmJLGHzVoG. Put the file in the root of this project, e.g. as ```dev.env```.
 
-This repository is a fork of the
-[tasking manager](https://github.com/hotosm/tasking-manager/) developed by the
-[Humanitarian OpenStreetMap Team](https://www.hotosm.org/).
+2. Add the following to your VS Code ```launch.json``` file and/or configure your IDE appropriately to connect to the debugger on port 5678 on demand:
 
-We forked the tasking manager for two reasons:
+```
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python Debugger: Attach",
+            "type": "debugpy",
+            "request": "attach",
+            "connect": {
+                "host": "localhost",
+                "port": 5678,
+            },
+            "pathMappings": [{
+                "localRoot": "${workspaceFolder}/backend",
+                "remoteRoot": "/usr/src/app/backend"
+            }],
+        },
+    ]
+}
+```
 
-1. We wanted to deploy using the provided `docker-compose` strategy and found
-it to be non-working. This fork includes patches that make it functional for
-our purposes, primarily the use of `ARG` in `Dockerfile`s so that environment
-variables can be passed during front end builds and documentation on when to
-use `--env-file` (for the same reason).
+3. Run: ```docker compose -f docker-compose.yml -f docker-compose.opensidewalks.yml --env-file dev.env --env-file tasking-manager.env build tm-frontend tm-backend-dev```. This layers the ```docker-compose.opensidewalks.yml``` file on top of ```docker-compose.yml```, and takes the ```tasking-manager.env``` file and replaces variables inside it with values from ```dev.env``` (NB: do *not* check this file into git). 
 
-2. Most branding and custom descriptions on the home page are currently
-impossible without editing the codebase - there was no way to remove language
-specific to the Humanitarian OpenStreetMap team and add language about our
-use of the tasking manager. Most projects using the tasking manager seem to
-fork it for this reason.
+You have now built docker images for the TM. 
 
-### Docs
+4. Run: ```docker compose -f docker-compose.yml -f docker-compose.opensidewalks.yml --env-file dev.env --env-file tasking-manager.env up tm-backend-dev``` to start the backend TM docker image. 
 
-Documentation on deploying this tasking manager is found in
-the [OPENSIDEWALKS_SETUP](OPENSIDEWALKS_SETUP.md) markdown file. This is only
-partial documentation: we recommended reading
-[the upstream docker setup docs](docs/setup-docker.md) first.
+The server will be listening on localhost:5001, and the pydebug debugger will be listening on port 5678. NB: the Python debug process will block until a debugger attaches to it.
 
-## The upstream README continues here
+5. If using VS Code, run step #4 above in the terminal inside VS Code. *The Python process will block until the debugger attaches*, so run the debugger from within VS Code, which should cause the terminal to emit messages related to it starting. 
 
-[![hotosm](https://dl.circleci.com/status-badge/img/gh/hotosm/tasking-manager/tree/develop.svg?style=shield)](https://dl.circleci.com/status-badge/redirect/gh/hotosm/tasking-manager/tree/develop)
-[![TM Backend on Quay](https://quay.io/repository/hotosm/tasking-manager/status "Tasking Manager Backend Build")](https://quay.io/repository/hotosm/tasking-manager)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=hotosm_tasking-manager&metric=alert_status)](https://sonarcloud.io/dashboard?id=hotosm_tasking-manager)
-
-![tm-landing-page](./docs/images/screenshot.jpg)
-
-The most popular tool for teams to coordinate mapping on OpenStreetMap. With this web application, an area of interest can be defined and divided up into smaller tasks that can be completed rapidly. It shows which areas need to be mapped and which areas need a review for quality assurance. You can see the tool in action: log into the widely used [HOT Tasking Manager](https://tasks.hotosm.org/) and start mapping.
-
-This is Free and Open Source Software. You are welcome to use the code and set up your own instance. The Tasking Manager has been initially designed and built by and for the [Humanitarian OpenStreetMap Team](https://www.hotosm.org/), and is nowadays used by many communities and organizations.
-
-## Get involved!
-
-* Start by reading our [Code of conduct](docs/developers/code_of_conduct.md)
-* Get familiar with our [contributor guidelines](docs/developers/contributing.md) explaining the different ways in which you can support this project! We need your help!
-* Join the Tasking Manager Collective Meet up - an opportunity to meet other Tasking Manager contributors. The meet ups take place on the second Wednesday of the month at 9:00 or 15:00UTC! Register to receive a calendar invite: https://bit.ly/3s6ntmV or join directly via this link: https://meet.jit.si/TaskingManagerCollectiveMeetUp
-* Read the monthly update blogs on [OSM Discourse](https://community.openstreetmap.org/c/general/38/all).
-
-## Product Roadmap
-We have included below a [high level roadmap/plan](https://github.com/orgs/hotosm/projects/28/) [subject to change] that can be used as an overview.
-
-
-## Developers
-
-* [Understand the code](./docs/developers/understanding-the-code.md)
-* [Setup the TM for development](./docs/developers/development-setup.md)
-* [Learn about versions and releases](./docs/developers/versions-and-releases.md)
-* Help us and submit [pull requests](https://github.com/hotosm/tasking-manager/pulls)
-
-## Instances
-* [HOT Tasking Manager (production)](https://tasks.hotosm.org)
-* [HOT Tasking Manager (staging)](https://tasks-stage.hotosm.org)
-* [TeachOSM](https://tasks.teachosm.org/)
-* [OpenStreetMap Indonesia](https://tasks-indonesia.hotosm.org/)
-* [OpenStreetMap US](https://tasks.openstreetmap.us/)
-* [Map My Kerala](https://mapmykerala.in/)
-* [OpenHistoricalMap](https://tasks.openhistoricalmap.org)
-* [Oceania Tasking Manager](https://tasks.smartcitiestransport.com/)
+6. You should now be able to set breakpoints within VS Code and access the TM at its URLs, e.g. ```http://localhost:5001/api/v2/workspaces/mine/?gig_only=true```
