@@ -83,7 +83,7 @@ RUN pip install --user --no-warn-script-location \
 EXPOSE 5678/tcp
 CMD ["python", "-m", "debugpy", "--wait-for-client", "--listen", "0.0.0.0:5678", \
     "-m", "gunicorn", "-c", "python:backend.gunicorn", "manage:application", \
-    "--reload", "--log-level", "error"]
+    "--reload", "--log-level", "debug"]
 
 
 

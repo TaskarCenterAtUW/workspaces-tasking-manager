@@ -33,7 +33,7 @@
 
 You have now built docker images for the TM. 
 
-4. Run: ```docker compose -f docker-compose.yml -f docker-compose.opensidewalks.yml --env-file dev.env --env-file tasking-manager.env up tm-backend-dev``` to start the backend TM docker image. 
+4. Run: ```docker compose -f docker-compose.yml -f docker-compose.opensidewalks.yml --env-file dev.env --env-file tasking-manager.env --profile dev up tm-backend-dev``` to start the backend TM docker image. 
 
 The server will be listening on localhost:5001, and the pydebug debugger will be listening on port 5678. NB: the Python debug process will block until a debugger attaches to it.
 

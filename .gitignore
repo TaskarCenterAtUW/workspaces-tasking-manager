@@ -68,3 +68,5 @@ htmlcov/
 
 # Docker & Docker compose
 docker-compose.override.yml
+
+*.env

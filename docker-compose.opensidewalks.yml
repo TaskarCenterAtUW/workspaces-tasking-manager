@@ -1,7 +1,5 @@
-version: "3.4"
-
 services:
-  backend:
+  tm-backend:
     environment:
       GUNICORN_CMD_ARGS: "--workers 5 --threads 5 --timeout 179"
     labels:
@@ -10,7 +8,27 @@ services:
       - traefik.http.routers.backend.entrypoints=websecure
       - traefik.http.routers.backend.tls.certresolver=myresolver
 
-  frontend:
+
+  tm-backend-dev:
+    profiles:
+      - dev
+    platform: linux/amd64 # Necessary if running on Apple Silicon
+    ports:
+      - "5678:5678"
+      - "5001:5000"
+    depends_on: !reset []
+    volumes:
+      # You may need to adjust the path below "backend" to point to your local backend code
+      - ./backend:/usr/src/app/backend
+    build:
+      context: .
+      target: debug
+    env_file:
+      - tasking-manager.env
+    restart: unless-stopped
+
+
+  tm-frontend:
     build:
       args:
         - TM_APP_API_URL
@@ -25,9 +43,9 @@ services:
       - traefik.http.routers.frontend.entrypoints=websecure
       - traefik.http.routers.frontend.tls.certresolver=myresolver
 
-  postgresql:
-    volumes:
-      - /opt/postgres/var/lib/postgresql/data:/var/lib/postgresql/data
+#  postgresql:
+#    volumes:
+#      - /opt/postgres/var/lib/postgresql/data:/var/lib/postgresql/data
 
   traefik:
      ports:

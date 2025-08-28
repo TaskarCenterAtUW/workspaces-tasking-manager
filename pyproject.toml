@@ -1,5 +1,5 @@
 [project]
-name = "HOTOSM Tasking Manager"
+name = "OSWTM"
 version = "0.1.0"
 description = "The tool to team up for mapping in OpenStreetMap"
 authors = [{ name = "HOT Sysadmin", email = "sysadmin@hotosm.org" }]
@@ -23,7 +23,7 @@ dependencies = [
     "Markdown==3.4.4",
     "oauthlib==3.2.2",
     "pandas>=2.0.2",
-    "psycopg2==2.9.6",
+    "psycopg2",
     "PyJWT==2.9.0",
     "python-dateutil==2.8.2",
     "python-dotenv==1.0.0",
@@ -37,9 +37,9 @@ dependencies = [
     "SQLAlchemy==2.0.19",
     "Werkzeug==2.3.6",
     # Indirect, but required dependencies (often required for efficient deployments)
-    "gevent==22.10.2",
+    "gevent",
     "greenlet==2.0.2",
-    "gunicorn[gevent]==20.1.0",
+    "gunicorn[gevent]",
     # For importlib-metadata, see https://github.com/hotosm/tasking-manager/issues/5395
     "importlib-metadata==6.8.0",
     # Dependencies used by hotosm.org for production deployments
