@@ -97,10 +97,6 @@ def create_app(env="backend.config.EnvironmentConfig"):
 
     app = Flask(__name__, template_folder="services/messaging/templates/")
 
-    app.url_map.strict_slashes = False
-    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1)
-    app.config['PREFERRED_URL_SCHEME'] = 'https'
-
     # Load configuration options from environment
     # Set env to TestEnvironmentConfig if TM_ENVIRONMENT is test
     if os.getenv("TM_ENVIRONMENT") == "test":

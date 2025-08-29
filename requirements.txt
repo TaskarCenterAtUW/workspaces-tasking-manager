@@ -54,4 +54,3 @@ gevent
 greenlet==2.0.2
 gunicorn
 importlib-metadata==6.8.0 # See https://github.com/hotosm/tasking-manager/issues/5395
-Werkzeug==2.3.6 # Proxy middleware
