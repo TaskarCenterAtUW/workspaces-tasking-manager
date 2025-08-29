@@ -24,6 +24,7 @@ from requests_oauthlib import OAuth2Session
 from flask_restful import Api
 from flask_sqlalchemy import SQLAlchemy
 from flask_mail import Mail
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from backend.config import EnvironmentConfig
 
@@ -97,6 +98,7 @@ def create_app(env="backend.config.EnvironmentConfig"):
     app = Flask(__name__, template_folder="services/messaging/templates/")
 
     app.url_map.strict_slashes = False
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
     # Load configuration options from environment
     # Set env to TestEnvironmentConfig if TM_ENVIRONMENT is test
