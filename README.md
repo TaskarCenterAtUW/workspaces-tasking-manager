@@ -29,14 +29,10 @@
 }
 ```
 
-3. Run: ```docker compose -f docker-compose.yml -f docker-compose.opensidewalks.yml --env-file dev.env --env-file tasking-manager.env build tm-frontend tm-backend-dev```. This layers the ```docker-compose.opensidewalks.yml``` file on top of ```docker-compose.yml```, and takes the ```tasking-manager.env``` file and replaces variables inside it with values from ```dev.env``` (NB: do *not* check this file into git). 
+3. Run: ```docker compose -f docker-compose.yml -f docker-compose.opensidewalks.yml --env-file dev.env --env-file tasking-manager.env build tm-frontend tm-backend-dev```. This layers the ```docker-compose.opensidewalks.yml``` file with customizations on top of repo-default ```docker-compose.yml```, and takes the ```tasking-manager.env``` file and replaces variables inside it with values from ```dev.env``` (NB: do *not* check any *.env file into git--they contain secret passwords!). You have now built docker images for the TM. 
 
-You have now built docker images for the TM. 
+4. Run: ```docker compose -f docker-compose.yml -f docker-compose.opensidewalks.yml --env-file dev.env --env-file tasking-manager.env --profile dev up tm-backend-dev``` to start the backend TM docker image. The server will be listening on localhost:5001, and the pydebug debugger will be listening on port 5678. (NB: the Python debug process will block until a debugger attaches to it.)
 
-4. Run: ```docker compose -f docker-compose.yml -f docker-compose.opensidewalks.yml --env-file dev.env --env-file tasking-manager.env --profile dev up tm-backend-dev``` to start the backend TM docker image. 
-
-The server will be listening on localhost:5001, and the pydebug debugger will be listening on port 5678. NB: the Python debug process will block until a debugger attaches to it.
-
-5. If using VS Code, run step #4 above in the terminal inside VS Code. *The Python process will block until the debugger attaches*, so run the debugger from within VS Code, which should cause the terminal to emit messages related to it starting. 
+5. If using VS Code, run step #4 above in the terminal inside VS Code. *Reminder: the Python process will block until the debugger attaches*, so run the debugger from within VS Code, which should cause the terminal to emit messages related to it starting. 
 
 6. You should now be able to set breakpoints within VS Code and access the TM at its URLs, e.g. ```http://localhost:5001/api/v2/workspaces/mine/?gig_only=true```
