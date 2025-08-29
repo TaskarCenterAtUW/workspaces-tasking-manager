@@ -96,6 +96,8 @@ def create_app(env="backend.config.EnvironmentConfig"):
 
     app = Flask(__name__, template_folder="services/messaging/templates/")
 
+    app.url_map.strict_slashes = False
+
     # Load configuration options from environment
     # Set env to TestEnvironmentConfig if TM_ENVIRONMENT is test
     if os.getenv("TM_ENVIRONMENT") == "test":
