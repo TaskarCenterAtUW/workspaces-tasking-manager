@@ -1,5 +1,6 @@
 import json
 import geojson
+from backend.services.users.authentication_service import token_auth
 
 from typing import cast
 from geoalchemy2 import Geometry, Geography
@@ -15,16 +16,26 @@ from backend.models.postgis.workspace_long_quest import WorkspaceLongQuest
 from backend.services.workspaces_service import WorkspacesService
 
 class WorkspacesRestAPI(Resource):
+    @token_auth.login_required
     def get(self, workspace_id: int):
+        authenticated_user = token_auth.current_user()      
+        if authenticated_user is None:
+            return {"Error": "Authentication is not valid.", "SubCode": "Not Authorized"}, 401
+
         try:
-            return WorkspacesService.get_workspace(workspace_id).as_dto().to_primitive()
+            return WorkspacesService.get_workspace(workspace_id, authenticated_user.get("project_group_ids")).as_dto().to_primitive()
         except NotFound:
             return {"Error": "Workspace not found", "SubCode": "NotFound"}, 404
 
+    @token_auth.login_required
     def patch(self, workspace_id: int):
+        authenticated_user = token_auth.current_user()      
+        if authenticated_user is None:
+            return {"Error": "Authentication is not valid.", "SubCode": "Not Authorized"}, 401
+
         try:
             payload = request.get_json()
-            workspace = WorkspacesService.get_workspace(workspace_id)
+            workspace = WorkspacesService.get_workspace(workspace_id, authenticated_user.get("project_group_ids"))
 
             if "title" in payload:
                 workspace.title = payload["title"]
@@ -40,9 +51,14 @@ class WorkspacesRestAPI(Resource):
         except NotFound:
             return {"Error": "Workspace not found", "SubCode": "NotFound"}, 404
 
+    @token_auth.login_required
     def delete(self, workspace_id: int):
+        authenticated_user = token_auth.current_user()      
+        if authenticated_user is None:
+            return {"Error": "Authentication is not valid.", "SubCode": "Not Authorized"}, 401
+
         try:
-            WorkspacesService.delete_workspace(workspace_id)
+            WorkspacesService.delete_workspace(workspace_id, authenticated_user.get("project_group_ids"))
             return Response(status=204)
         except NotFound:
             return {"Error": "Workspace not found", "SubCode": "NotFound"}, 404
@@ -53,18 +69,23 @@ class WorkspacesMineAPI(Resource):
         return WorkspacesListAPI.get(self)
 
 class WorkspacesListAPI(Resource):
+    @token_auth.login_required
     def get(self):
+        authenticated_user = token_auth.current_user()      
+        if authenticated_user is None:
+            return {"Error": "Authentication is not valid.", "SubCode": "Not Authorized"}, 401
+
         externalAppOnly = False
         
         if 'gig_only' in request.args:
-            externalAppOnly = (request.args['gig_only'] == "True")
+            externalAppOnly = (request.args['gig_only'] == "true")
 
         if 'externalAppAccess' in request.args:
-            externalAppOnly = (request.args['externalAppAccess'] == "True")
+            externalAppOnly = (request.args['externalAppAccess'] == "true")
         
         r = []
-        for w in WorkspacesService.list_workspaces(externalAppOnly):
-            tdeiMetadata = {};
+        for w in WorkspacesService.list_workspaces(externalAppOnly, authenticated_user.get("project_group_ids")):
+            tdeiMetadata = {}
             
             if 'lat' in request.args and 'lon' in request.args:
                 try:
@@ -111,7 +132,12 @@ class WorkspacesListAPI(Resource):
             
         return r
 
+    @token_auth.login_required
     def post(self):
+        authenticated_user = token_auth.current_user()      
+        if authenticated_user is None:
+            return {"Error": "User is not authenticated", "SubCode": "Not Authorized"}, 401
+
         try:
             payload = request.get_json()
             workspace = Workspace()
@@ -119,6 +145,10 @@ class WorkspacesListAPI(Resource):
             workspace.type = payload["type"]
             workspace.tdeiRecordId = payload.get("tdeiRecordId")
             workspace.tdeiProjectGroupId = payload["tdeiProjectGroupId"]
+
+            if workspace.tdeiProjectGroupId not in authenticated_user.get("project_group_ids"):
+                return {"Error": "No permission for that project group", "SubCode": "Not Authorized"}, 401
+
             workspace.tdeiServiceId = payload.get("tdeiServiceId")
             workspace.tdeiMetadata = payload.get("tdeiMetadata")
             workspace.createdBy = payload["createdBy"]
@@ -153,17 +183,27 @@ class WorkspacesStaticQuestAPI(Resource):
 
 
 class WorkspacesLongFormQuestAPI(Resource):
+    @token_auth.login_required
     def get(self, workspace_id: int):
+        authenticated_user = token_auth.current_user()      
+        if authenticated_user is None:
+            return {"Error": "User is not authenticated", "SubCode": "Not Authorized"}, 401
+        
         try:
             return Response(
-                response=WorkspacesService.get_workspace_long_form_quest(workspace_id).definition,
+                response=WorkspacesService.get_workspace_long_form_quest(workspace_id, authenticated_user.get("project_group_ids")).definition,
                 status=200,
                 mimetype="application/json"
             )
         except NotFound as e:
             return Response(status=204)
 
+    @token_auth.login_required
     def put(self, workspace_id: int):
+        authenticated_user = token_auth.current_user()      
+        if authenticated_user is None:
+            return {"Error": "User is not authenticated", "SubCode": "Not Authorized"}, 401
+
         definitionJson = request.get_data(True, True)
-        WorkspacesService.save_long_form_quest(workspace_id, definitionJson)
+        WorkspacesService.save_long_form_quest(workspace_id, definitionJson, authenticated_user.get("project_group_ids"))
         return Response(status=204)

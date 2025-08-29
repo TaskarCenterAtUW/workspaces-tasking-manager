@@ -8,8 +8,8 @@ from backend.models.postgis.workspace_long_quest import WorkspaceLongQuest
 
 class WorkspacesService:
     @staticmethod
-    def list_workspaces(externalAppOnly: bool = False):
-        query = Workspace.query
+    def list_workspaces(externalAppOnly: bool, projectGroupIds: list):
+        query = Workspace.query.filter(Workspace.tdeiProjectGroupId.in_(projectGroupIds))
 
         if externalAppOnly:
             query = query.filter(Workspace.externalAppAccess > 0)
@@ -17,8 +17,11 @@ class WorkspacesService:
         return query.all()
 
     @staticmethod
-    def get_workspace(id: int) -> Workspace:
+    def get_workspace(id: int, projectGroupIds: list) -> Workspace:
         workspace = db.session.get(Workspace, id)
+
+        if workspace.tdeiProjectGroupId not in projectGroupIds:
+            raise NotFound()    
 
         if workspace is None:
             raise NotFound()
@@ -26,8 +29,11 @@ class WorkspacesService:
         return workspace
 
     @staticmethod
-    def delete_workspace(id: int):
+    def delete_workspace(id: int, projectGroupIds: list):
         workspace = db.session.get(Workspace, id)
+
+        if workspace.tdeiProjectGroupId not in projectGroupIds:
+            raise NotFound()    
 
         if workspace is None:
             raise NotFound()
@@ -36,16 +42,25 @@ class WorkspacesService:
         db.session.commit()
 
     @staticmethod
-    def get_workspace_long_form_quest(workspace_id: int) -> WorkspaceLongQuest:
+    def get_workspace_long_form_quest(workspace_id: int, projectGroupIds: list) -> WorkspaceLongQuest:
         quest = db.session.get(WorkspaceLongQuest, workspace_id)
 
+        workspace = db.session.get(Workspace, workspace_id)
+        if workspace.tdeiProjectGroupId not in projectGroupIds:
+            raise NotFound()    
+        
         if quest is None:
             raise NotFound()
 
         return quest
 
-    def save_long_form_quest(workspace_id: int, definition: str):
+    @staticmethod
+    def save_long_form_quest(workspace_id: int, definition: str, projectGroupIds: list):
         quest = db.session.get(WorkspaceLongQuest, workspace_id)
+
+        workspace = db.session.get(Workspace, workspace_id)
+        if workspace.tdeiProjectGroupId not in projectGroupIds:
+            raise NotFound()    
 
         if quest is None:
             quest = WorkspaceLongQuest()

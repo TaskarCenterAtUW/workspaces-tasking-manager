@@ -1,5 +1,9 @@
 import base64
 import urllib.parse
+import jwt
+import time
+from urllib.request import Request, urlopen
+import json
 
 from flask import current_app, request
 from flask_httpauth import HTTPTokenAuth
@@ -10,19 +14,17 @@ from backend.services.messaging.message_service import MessageService
 from backend.services.users.user_service import UserService, NotFound
 from random import SystemRandom
 
-token_auth = HTTPTokenAuth(scheme="Token")
+token_auth = HTTPTokenAuth(scheme="Bearer")
 tm = TMAPIDecorators()
 
 UNICODE_ASCII_CHARACTER_SET = (
     "abcdefghijklmnopqrstuvwxyz" "ABCDEFGHIJKLMNOPQRSTUVWXYZ" "0123456789" "-_"
 )
 
-
 @token_auth.error_handler
 def handle_unauthorized_token():
     current_app.logger.debug("Token not valid")
     return {"Error": "Token is expired or invalid", "SubCode": "InvalidToken"}, 401
-
 
 @token_auth.verify_token
 def verify_token(token):
@@ -33,9 +35,47 @@ def verify_token(token):
 
     return verify_osm_token
 
-
 def verify_tdei_token(token):
-    return False
+    try:
+        r = jwt.decode(token, options={'verify_signature': False})
+    except jwt.DecodeError:
+        return False
+
+#    epoch_time = int(time.time())
+#    if int(r.get("exp")) < epoch_time:
+#        return False
+    
+    if r.get("sub") is None:
+        return False
+
+    user_id = r.get("sub")
+
+    req = Request("https://portal-api-dev.tdei.us/api/v1/project-group-roles/" + user_id + "?page_no=1&page_size=50")
+    req.add_header('Authorization', 'Bearer ' + token)
+    req.add_header('Content-Type', 'application/json')
+
+    resp = urlopen(req)
+
+    # token is not valid or server unavailable
+    if resp.status != 200:
+        return False
+
+    content = resp.read()
+
+    try:
+        j = json.loads(content)
+    except json.JSONDecodeError:
+        return False
+
+    pgs = []
+    for i in j: 
+        pgs.append(i["tdei_project_group_id"])
+
+    tm.authenticated_user_id = {
+        "id": user_id,
+        "project_group_ids": pgs
+    }
+    return tm.authenticated_user_id
 
 def verify_osm_token(token):
     """Verify the supplied token and check user role is correct for the requested resource"""
