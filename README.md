@@ -1,5 +1,7 @@
 # Tasking Manager
 
+### ⚠️ Reminder: you must set the tag of the environment you wish to deploy in this repo, then run the deploy workflow in workspaces-stack to deploy to dev, stage or prod. 
+
 ### Dev Setup
 1. Download the proper .env file from the TCAT Lab Google Drive: https://drive.google.com/drive/folders/1CDr-Xn1GuCatGq5i5txj_htmJLGHzVoG. Put the file in the root of this project, e.g. as ```dev.env```.
 
