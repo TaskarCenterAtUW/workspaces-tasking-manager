@@ -20,7 +20,7 @@ class WorkspacesService:
     def get_workspace(id: int, projectGroupIds: list) -> Workspace:
         workspace = db.session.get(Workspace, id)
 
-        if workspace.tdeiProjectGroupId not in projectGroupIds:
+        if str(workspace.tdeiProjectGroupId) not in projectGroupIds:
             raise NotFound()    
 
         if workspace is None:
@@ -32,7 +32,7 @@ class WorkspacesService:
     def delete_workspace(id: int, projectGroupIds: list):
         workspace = db.session.get(Workspace, id)
 
-        if workspace.tdeiProjectGroupId not in projectGroupIds:
+        if str(workspace.tdeiProjectGroupId) not in projectGroupIds:
             raise NotFound()    
 
         if workspace is None:
@@ -46,7 +46,7 @@ class WorkspacesService:
         quest = db.session.get(WorkspaceLongQuest, workspace_id)
 
         workspace = db.session.get(Workspace, workspace_id)
-        if workspace.tdeiProjectGroupId not in projectGroupIds:
+        if str(workspace.tdeiProjectGroupId) not in projectGroupIds:
             raise NotFound()    
         
         if quest is None:
@@ -59,7 +59,7 @@ class WorkspacesService:
         quest = db.session.get(WorkspaceLongQuest, workspace_id)
 
         workspace = db.session.get(Workspace, workspace_id)
-        if workspace.tdeiProjectGroupId not in projectGroupIds:
+        if str(workspace.tdeiProjectGroupId) not in projectGroupIds:
             raise NotFound()    
 
         if quest is None:
