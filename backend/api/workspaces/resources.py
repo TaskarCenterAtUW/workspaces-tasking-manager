@@ -76,59 +76,62 @@ class WorkspacesListAPI(Resource):
             return {"Error": "Authentication is not valid.", "SubCode": "Not Authorized"}, 401
 
         externalAppOnly = False
-        
         if 'gig_only' in request.args:
-            externalAppOnly = (request.args['gig_only'] == "true")
+            externalAppOnly = (request.args['gig_only'] == "true" 
+                               or request.args['gig_only'] == "1")
 
         if 'externalAppAccess' in request.args:
-            externalAppOnly = (request.args['externalAppAccess'] == "true")
+            externalAppOnly = (request.args['externalAppAccess'] == "true" 
+                               or request.args['externalAppAccess'] == "1")
         
         r = []
         for w in WorkspacesService.list_workspaces(externalAppOnly, authenticated_user.get("project_group_ids")):
-            tdeiMetadata = {}
-            
-            if 'lat' in request.args and 'lon' in request.args:
-                try:
-                    if w.tdeiMetadata is not None:
-                        tdeiMetadata = json.loads(w.tdeiMetadata)
-                except json.JSONDecodeError as e:
-                    pass
+#            tdeiMetadata = {}
+                        
+#            if 'lat' in request.args and 'lon' in request.args:
+#                try:
+#                    if w.tdeiMetadata is not None:
+#                        tdeiMetadata = json.loads(w.tdeiMetadata)
+#                except json.JSONDecodeError:
+#                    pass
                     
-                if ('metadata' in tdeiMetadata and
-                    'dataset_detail' in tdeiMetadata['metadata'] and
-                    'dataset_area' in tdeiMetadata['metadata']['dataset_detail']):
-                        dataset_area = tdeiMetadata['metadata']['dataset_detail']['dataset_area'];
+#                if ('metadata' in tdeiMetadata and
+#                    'dataset_detail' in tdeiMetadata['metadata'] and
+#                    'dataset_area' in tdeiMetadata['metadata']['dataset_detail']):
+#                        dataset_area = tdeiMetadata['metadata']['dataset_detail']['dataset_area']
 
-                        if dataset_area is not None:
-                            dataset_area_object = geojson.loads(json.dumps(dataset_area));
+#                        if dataset_area is not None:
+#                            dataset_area_object = geojson.loads(json.dumps(dataset_area))
 
-                            for feature in dataset_area_object['features']:
-                                datasetAreaGeom = ST_GeomFromGeoJSON(feature['geometry'])
-                                userLocationGeom = ST_SetSRID(ST_MakePoint(request.args['lon'], request.args['lat']), 4326)
+#                            for feature in dataset_area_object['features']:
+#                                datasetAreaGeom = ST_GeomFromGeoJSON(feature['geometry'])
+#                                userLocationGeom = ST_SetSRID(ST_MakePoint(request.args['lon'], request.args['lat']), 4326)
 
-                                if 'radius' in request.args:
-                                    try:
-                                        userLocationGeom = cast(ST_Buffer(cast(
-                                            ST_SetSRID(ST_MakePoint(request.args['lon'], request.args['lat']), 4326), 
-                                            Geography), int(request.args['radius'])), Geometry)
-                                    except ValueError:
-                                        pass
+#                                if 'radius' in request.args:
+#                                    try:
+#                                        userLocationGeom = ST_Buffer(
+#                                                                ST_SetSRID(ST_MakePoint(request.args['lon'], request.args['lat']), 4326), 
+#                                                                int(request.args['radius'])
+#                                                            )
+#                                    except ValueError:
+#                                        pass
                             
-                                # dataset area intersects with user location
-                                if ST_Intersects(datasetAreaGeom, userLocationGeom) == True:
-                                    r.append(w.as_dto().to_primitive())
+#                                # dataset area intersects with user location
+#                                if ST_Intersects(datasetAreaGeom, userLocationGeom):
+#                                    r.append(w.as_dto().to_primitive())
 
-                        # dataset has no area, so include (FIXME?)
-                        else:
-                            r.append(w.as_dto().to_primitive())
+#                        # dataset has no area, so include (FIXME?)
+#                        else:
+#                            r.append(w.as_dto().to_primitive())
 
-                # dataset has no metadata, include
-                else:
-                    r.append(w.as_dto().to_primitive())
-                    
-            # no user location provided, so include
-            else:
-                r.append(w.as_dto().to_primitive())
+#                # dataset has no metadata, include
+#                else:
+#                    r.append(w.as_dto().to_primitive())
+#                    
+#            # no user location provided, so include
+#            else:
+            
+            r.append(w.as_dto().to_primitive())
             
         return r
 
