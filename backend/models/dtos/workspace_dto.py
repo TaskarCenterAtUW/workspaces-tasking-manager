@@ -21,3 +21,4 @@ class WorkspaceDTO(Model):
     createdByName = StringType()
     externalAppAccess = IntType()
     kartaViewToken = StringType()
+    imageryList = StringType()
