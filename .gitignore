@@ -70,3 +70,4 @@ htmlcov/
 docker-compose.override.yml
 
 *.env
+.venv
