@@ -33,7 +33,7 @@ def verify_token(token):
     if user_id:
         return user_id
 
-    return verify_osm_token
+    return verify_osm_token(token)
 
 def verify_tdei_token(token):
     try:
@@ -54,10 +54,13 @@ def verify_tdei_token(token):
     req.add_header('Authorization', 'Bearer ' + token)
     req.add_header('Content-Type', 'application/json')
 
-    resp = urlopen(req)
+    try:
+        resp = urlopen(req)
 
-    # token is not valid or server unavailable
-    if resp.status != 200:
+        # token is not valid or server unavailable
+        if resp.status != 200:
+            return False
+    except Exception as e:
         return False
 
     content = resp.read()
@@ -71,11 +74,13 @@ def verify_tdei_token(token):
     for i in j: 
         pgs.append(i["tdei_project_group_id"])
 
-    tm.authenticated_user_id = {
+    tm.authenticated_user_id = (
+        user_id  # Set the user ID on the decorator as a convenience
+    )
+    return {
         "id": user_id,
         "project_group_ids": pgs
     }
-    return tm.authenticated_user_id
 
 def verify_osm_token(token):
     """Verify the supplied token and check user role is correct for the requested resource"""
@@ -85,7 +90,7 @@ def verify_osm_token(token):
 
     try:
         decoded_token = base64.b64decode(token).decode("utf-8")
-    except UnicodeDecodeError:
+    except Exception:
         current_app.logger.debug(f"Unable to decode token {request.base_url}")
         return False  # Can't decode token, so fail login
 
