@@ -4,6 +4,7 @@ from backend import db
 from backend.models.postgis.utils import NotFound
 from backend.models.postgis.workspace import Workspace
 from backend.models.postgis.workspace_long_quest import WorkspaceLongQuest
+from backend.models.postgis.workspace_imagery import WorkspaceImagery
 
 
 class WorkspacesService:
@@ -70,4 +71,32 @@ class WorkspacesService:
         quest.definition = definition
         quest.modifiedBy = uuid.UUID(int=0)
         quest.modifiedByName = ""
+        db.session.commit()
+        
+    @staticmethod
+    def get_workspace_imagery(workspace_id: int) -> WorkspaceImagery:
+        imagery = db.session.get(WorkspaceImagery, workspace_id)
+
+        if imagery is None:
+            return None
+
+        return imagery
+
+    @staticmethod
+    def save_imagery_list(workspace_id: int, definition: str, projectGroupIds: list):
+        workspace = db.session.get(Workspace, workspace_id)
+
+        if str(workspace.tdeiProjectGroupId) not in projectGroupIds:
+            raise NotFound()    
+
+        imagery = db.session.get(WorkspaceImagery, workspace_id)
+
+        if imagery is None:
+            imagery = WorkspaceImagery()
+            imagery.workspace_id = workspace_id
+            db.session.add(imagery)
+
+        imagery.definition = definition
+        imagery.modifiedBy = uuid.UUID(int=0)
+        imagery.modifiedByName = ""
         db.session.commit()
