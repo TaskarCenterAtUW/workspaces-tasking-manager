@@ -1,6 +1,8 @@
 import json
 import geojson
+import jsonschema
 from backend.services.users.authentication_service import token_auth
+from backend.config import EnvironmentConfig
 
 from typing import cast
 from geoalchemy2 import Geometry, Geography
@@ -14,6 +16,7 @@ from backend.models.postgis.utils import NotFound
 from backend.models.postgis.workspace import Workspace
 from backend.models.postgis.workspace_long_quest import WorkspaceLongQuest
 from backend.services.workspaces_service import WorkspacesService
+from backend.utils.validate_schema import validate_json_against_schema
 
 class WorkspacesRestAPI(Resource):
     @token_auth.login_required
@@ -34,6 +37,7 @@ class WorkspacesRestAPI(Resource):
             return {"Error": "Authentication is not valid.", "SubCode": "Not Authorized"}, 401
 
         try:
+            error_type = None
             payload = request.get_json()
             workspace = WorkspacesService.get_workspace(workspace_id, authenticated_user.get("project_group_ids"))
 
@@ -47,7 +51,8 @@ class WorkspacesRestAPI(Resource):
             workspace.update()
 
             return Response(status=204)
-
+        except jsonschema.ValidationError as e:
+            return {"Error": f"Invalid {error_type}: {e.message} at {list(e.path)}",  "SubCode": "InvalidData"}, 400
         except NotFound:
             return {"Error": "Workspace not found", "SubCode": "NotFound"}, 404
 
