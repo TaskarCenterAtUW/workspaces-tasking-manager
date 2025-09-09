@@ -26,7 +26,6 @@ class Workspace(db.Model):
     # GoInfoGame visibility: 0 = none, 1 = public, 2 = project group
     externalAppAccess = db.Column(db.SmallInteger, nullable=False, default=0)
     kartaViewToken = db.Column(db.Unicode)
-    imageryList = db.Column(db.Unicode, default="")
 
     def create(self):
         """Creates and saves the current model to the DB"""
@@ -57,6 +56,5 @@ class Workspace(db.Model):
         dto.createdByName = self.createdByName
         dto.externalAppAccess = self.externalAppAccess
         dto.kartaViewToken = self.kartaViewToken
-        dto.imageryList = self.imageryList
         
         return dto
