@@ -1,6 +1,7 @@
 import uuid
 
 from backend import db
+from backend.models.postgis import workspace
 from backend.models.postgis.utils import NotFound
 from backend.models.postgis.workspace import Workspace
 from backend.models.postgis.workspace_long_quest import WorkspaceLongQuest
@@ -9,8 +10,9 @@ from backend.models.postgis.workspace_imagery import WorkspaceImagery
 
 class WorkspacesService:
     @staticmethod
-    def list_workspaces(externalAppOnly: bool, projectGroupIds: list):
-        query = Workspace.query.filter(Workspace.tdeiProjectGroupId.in_(projectGroupIds))
+    def list_workspaces(externalAppOnly: bool, projectGroupIds: list, query_obj=None):
+        query = query_obj or Workspace.query
+        query = query.filter(Workspace.tdeiProjectGroupId.in_(projectGroupIds))
 
         if externalAppOnly:
             query = query.filter(Workspace.externalAppAccess > 0)
@@ -21,11 +23,11 @@ class WorkspacesService:
     def get_workspace(id: int, projectGroupIds: list) -> Workspace:
         workspace = db.session.get(Workspace, id)
 
-        if str(workspace.tdeiProjectGroupId) not in projectGroupIds:
-            raise NotFound()    
-
         if workspace is None:
             raise NotFound()
+
+        if str(workspace.tdeiProjectGroupId) not in projectGroupIds:
+            raise NotFound()    
 
         return workspace
 
@@ -33,35 +35,42 @@ class WorkspacesService:
     def delete_workspace(id: int, projectGroupIds: list):
         workspace = db.session.get(Workspace, id)
 
-        if str(workspace.tdeiProjectGroupId) not in projectGroupIds:
-            raise NotFound()    
-
         if workspace is None:
             raise NotFound()
+        
+        if str(workspace.tdeiProjectGroupId) not in projectGroupIds:
+            raise NotFound()    
 
         db.session.delete(workspace)
         db.session.commit()
 
     @staticmethod
     def get_workspace_long_form_quest(workspace_id: int, projectGroupIds: list) -> WorkspaceLongQuest:
-        quest = db.session.get(WorkspaceLongQuest, workspace_id)
-
         workspace = db.session.get(Workspace, workspace_id)
+
+        if workspace is None:
+            raise NotFound()
+
         if str(workspace.tdeiProjectGroupId) not in projectGroupIds:
             raise NotFound()    
         
+        quest = db.session.get(WorkspaceLongQuest, workspace_id)
+        
         if quest is None:
             raise NotFound()
-
         return quest
 
     @staticmethod
     def save_long_form_quest(workspace_id: int, definition: str, projectGroupIds: list):
-        quest = db.session.get(WorkspaceLongQuest, workspace_id)
-
         workspace = db.session.get(Workspace, workspace_id)
+        
+        if workspace is None:
+            raise NotFound()
+        
         if str(workspace.tdeiProjectGroupId) not in projectGroupIds:
             raise NotFound()    
+        
+        quest = db.session.get(WorkspaceLongQuest, workspace_id)
 
         if quest is None:
             quest = WorkspaceLongQuest()
@@ -74,7 +83,15 @@ class WorkspacesService:
         db.session.commit()
         
     @staticmethod
-    def get_workspace_imagery(workspace_id: int) -> WorkspaceImagery:
+    def get_workspace_imagery(workspace_id: int,  projectGroupIds: list) -> WorkspaceImagery:
+        workspace = db.session.get(Workspace, workspace_id)
+
+        if workspace is None:
+            raise NotFound()
+
+        if str(workspace.tdeiProjectGroupId) not in projectGroupIds:
+            raise NotFound()
+            
         imagery = db.session.get(WorkspaceImagery, workspace_id)
 
         if imagery is None:
@@ -86,6 +103,9 @@ class WorkspacesService:
     def save_imagery_list(workspace_id: int, definition: str, projectGroupIds: list):
         workspace = db.session.get(Workspace, workspace_id)
 
+        if workspace is None:
+            raise NotFound()
+        
         if str(workspace.tdeiProjectGroupId) not in projectGroupIds:
             raise NotFound()    
 
