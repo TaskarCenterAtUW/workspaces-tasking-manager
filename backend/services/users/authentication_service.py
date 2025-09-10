@@ -60,15 +60,18 @@ def verify_tdei_token(token):
 
         # token is not valid or server unavailable
         if resp.status != 200:
+            current_app.logger.debug(f"Token not validated by server, status={resp.status}")
             return False
     except Exception as e:
+        current_app.logger.debug(f"Token not validated by server, exception={e}")
         return False
 
     content = resp.read()
 
     try:
         j = json.loads(content)
-    except json.JSONDecodeError:
+    except json.JSONDecodeError as e:
+        current_app.logger.debug(f"Server response not decodable as JSON, exception={e}")
         return False
 
     pgs = []
