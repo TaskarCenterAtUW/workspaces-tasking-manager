@@ -51,7 +51,7 @@ def verify_tdei_token(token):
 
     user_id = r.get("sub")
 
-    req = Request(os.environ.get("WS_TDEI_BACKEND_URL", "https://portal.tdei.us/api/v1/") + "/project-group-roles/" + user_id + "?page_no=1&page_size=50")
+    req = Request(os.environ.get("TM_TDEI_BACKEND_URL", "https://portal.tdei.us/api/v1/") + "/project-group-roles/" + user_id + "?page_no=1&page_size=50")
     req.add_header('Authorization', 'Bearer ' + token)
     req.add_header('Content-Type', 'application/json')
 
