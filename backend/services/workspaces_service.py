@@ -57,7 +57,8 @@ class WorkspacesService:
         quest = db.session.get(WorkspaceLongQuest, workspace_id)
         
         if quest is None:
-            raise NotFound()
+            return None
+        
         return quest
 
     @staticmethod

@@ -240,8 +240,8 @@ class EnvironmentConfig:
     # Ohsome Stats Token
     OHSOME_STATS_TOKEN = os.getenv("OHSOME_STATS_TOKEN", None)
 
-    IMAGERY_SCHEMA_URL = "https://raw.githubusercontent.com/TaskarCenterAtUW/tdei-tools/refs/heads/main/docs/imagery-layer/schema.json"
-    LONGFORM_SCHEMA_URL = "https://raw.githubusercontent.com/TaskarCenterAtUW/tdei-tools/refs/heads/main/docs/quest-definition/schema.json"
+    WS_IMAGERY_SCHEMA_URL = os.getenv("WS_IMAGERY_SCHEMA_URL", None)
+    WS_LONGFORM_SCHEMA_URL = os.getenv("WS_LONGFORM_SCHEMA_URL", None)
 
 
 class TestEnvironmentConfig(EnvironmentConfig):

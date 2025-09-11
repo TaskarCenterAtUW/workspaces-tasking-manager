@@ -26,7 +26,13 @@ class WorkspacesRestAPI(Resource):
             return {"Error": "Authentication is not valid.", "SubCode": "Not Authorized"}, 401
 
         try:
-            return WorkspacesService.get_workspace(workspace_id, authenticated_user.get("project_group_ids")).as_dto().to_primitive()
+            workspace =  WorkspacesService.get_workspace(workspace_id, authenticated_user.get("project_group_ids")).as_dto().to_primitive()
+            imagery_list = WorkspacesService.get_workspace_imagery(workspace.get("id"), authenticated_user.get("project_group_ids"))
+            longform_quest_obj = WorkspacesService.get_workspace_long_form_quest(workspace.get("id"), authenticated_user.get("project_group_ids"))
+            longform_quest = longform_quest_obj.as_dto() if longform_quest_obj else None
+            workspace["imageryListDef"] = imagery_list.definition if imagery_list else []
+            workspace["longFormQuestDef"] = longform_quest.definition if longform_quest else {}
+            return workspace
         except NotFound:
             return {"Error": "Workspace not found", "SubCode": "NotFound"}, 404
 
@@ -198,8 +204,11 @@ class WorkspacesLongFormQuestAPI(Resource):
             return {"Error": "User is not authenticated", "SubCode": "Not Authorized"}, 401
         
         try:
+            longform_quest = WorkspacesService.get_workspace_long_form_quest(workspace_id, authenticated_user.get("project_group_ids"))
+            if longform_quest is None:
+                raise NotFound()
             return Response(
-                response=WorkspacesService.get_workspace_long_form_quest(workspace_id, authenticated_user.get("project_group_ids")).definition,
+                response=longform_quest.definition,
                 status=200,
                 mimetype="application/json"
             )
