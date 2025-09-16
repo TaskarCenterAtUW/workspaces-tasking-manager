@@ -12,7 +12,7 @@ class WorkspaceImagery(db.Model):
     __tablename__ = "workspaces_imagery"
 
     workspace_id = db.Column(db.Integer, db.ForeignKey(Workspace.id), primary_key=True)
-    definition = db.Column(db.JSON, nullable=False, default=list)
+    definition = db.Column(db.JSON, nullable=True, default=None)
     modifiedAt = db.Column(db.DateTime, nullable=False, default=timestamp, onupdate=timestamp)
     modifiedBy = db.Column(UUID(as_uuid=True), nullable=False)
     modifiedByName = db.Column(db.Unicode, nullable=False)

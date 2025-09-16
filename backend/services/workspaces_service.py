@@ -84,6 +84,40 @@ class WorkspacesService:
         db.session.commit()
         
     @staticmethod
+    def save_long_form_and_imagery_definition(workspace_id: int, long_form_definition: str, imagery_definition: str, projectGroupIds: list):
+        workspace = db.session.get(Workspace, workspace_id)
+        
+        if workspace is None:
+            raise NotFound()
+        
+        if str(workspace.tdeiProjectGroupId) not in projectGroupIds:
+            raise NotFound()    
+        
+        quest = db.session.get(WorkspaceLongQuest, workspace_id)
+
+        if quest is None:
+            quest = WorkspaceLongQuest()
+            quest.workspace_id = workspace_id
+            db.session.add(quest)
+
+        quest.definition = long_form_definition
+        quest.modifiedBy = uuid.UUID(int=0)
+        quest.modifiedByName = ""
+        
+        imagery = db.session.get(WorkspaceImagery, workspace_id)
+
+        if imagery is None:
+            imagery = WorkspaceImagery()
+            imagery.workspace_id = workspace_id
+            db.session.add(imagery)
+
+        imagery.definition = imagery_definition
+        imagery.modifiedBy = uuid.UUID(int=0)
+        imagery.modifiedByName = ""
+        
+        db.session.commit()
+        
+    @staticmethod
     def get_workspace_imagery(workspace_id: int,  projectGroupIds: list) -> WorkspaceImagery:
         workspace = db.session.get(Workspace, workspace_id)
 
@@ -99,25 +133,3 @@ class WorkspacesService:
             return None
 
         return imagery
-
-    @staticmethod
-    def save_imagery_list(workspace_id: int, definition: str, projectGroupIds: list):
-        workspace = db.session.get(Workspace, workspace_id)
-
-        if workspace is None:
-            raise NotFound()
-        
-        if str(workspace.tdeiProjectGroupId) not in projectGroupIds:
-            raise NotFound()    
-
-        imagery = db.session.get(WorkspaceImagery, workspace_id)
-
-        if imagery is None:
-            imagery = WorkspaceImagery()
-            imagery.workspace_id = workspace_id
-            db.session.add(imagery)
-
-        imagery.definition = definition
-        imagery.modifiedBy = uuid.UUID(int=0)
-        imagery.modifiedByName = ""
-        db.session.commit()

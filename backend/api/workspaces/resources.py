@@ -30,8 +30,8 @@ class WorkspacesRestAPI(Resource):
             imagery_list = WorkspacesService.get_workspace_imagery(workspace.get("id"), authenticated_user.get("project_group_ids"))
             longform_quest_obj = WorkspacesService.get_workspace_long_form_quest(workspace.get("id"), authenticated_user.get("project_group_ids"))
             longform_quest = longform_quest_obj.as_dto() if longform_quest_obj else None
-            workspace["imageryListDef"] = imagery_list.definition if imagery_list else []
-            workspace["longFormQuestDef"] = longform_quest.definition if longform_quest else {}
+            workspace["imageryListDef"] = imagery_list.definition if imagery_list else None
+            workspace["longFormQuestDef"] = json.loads(longform_quest.definition) if longform_quest and longform_quest.definition else None
             return workspace
         except NotFound:
             return {"Error": "Workspace not found", "SubCode": "NotFound"}, 404
@@ -53,6 +53,33 @@ class WorkspacesRestAPI(Resource):
                 workspace.description = payload["description"]
             if "externalAppAccess" in payload:
                 workspace.externalAppAccess = payload["externalAppAccess"]
+            
+            if "longFormQuestDef" in payload and "imageryListDef" in payload:
+                longFormdefinitionJson = payload["longFormQuestDef"]
+                imageryListJson = payload["imageryListDef"]
+
+                error_type = "Long form quest definition"
+                if isinstance(longFormdefinitionJson, dict) and longFormdefinitionJson:
+                    validate_json_against_schema(longFormdefinitionJson, EnvironmentConfig.WS_LONGFORM_SCHEMA_URL)
+                elif longFormdefinitionJson is None:
+                    pass  # Do nothing if None
+                else:
+                    return {"Error": f"{error_type}: Must be a JSON object or null",  "SubCode": "InvalidData"}, 400
+
+                error_type = "Imagery list definition"
+                if isinstance(imageryListJson, list) and imageryListJson:
+                    validate_json_against_schema(imageryListJson, EnvironmentConfig.WS_IMAGERY_SCHEMA_URL)
+                elif imageryListJson is None:
+                    pass  # Do nothing if None
+                else:
+                    return {"Error": f"{error_type}: Must be a JSON array or null",  "SubCode": "InvalidData"}, 400
+                
+                WorkspacesService.save_long_form_and_imagery_definition(
+                    workspace_id, 
+                    json.dumps(longFormdefinitionJson) if longFormdefinitionJson else None, 
+                    imageryListJson if imageryListJson else None, 
+                    authenticated_user.get("project_group_ids")
+                )
 
             workspace.update()
 

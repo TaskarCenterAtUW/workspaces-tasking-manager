@@ -12,7 +12,7 @@ class WorkspaceLongQuest(db.Model):
     __tablename__ = "workspaces_long_quests"
 
     workspace_id = db.Column(db.Integer, db.ForeignKey(Workspace.id), primary_key=True)
-    definition = db.Column(db.Unicode, nullable=False, default="{}") 
+    definition = db.Column(db.Unicode, nullable=True, default=None) 
     modifiedAt = db.Column(db.DateTime, nullable=False, default=timestamp, onupdate=timestamp)
     modifiedBy = db.Column(UUID(as_uuid=True), nullable=False)
     modifiedByName = db.Column(db.Unicode, nullable=False)
@@ -34,7 +34,7 @@ class WorkspaceLongQuest(db.Model):
     def as_dto(self):
         dto = WorkspaceLongQuestDTO()
         dto.workspace_id = self.workspace_id
-        dto.definition = json.loads(self.definition)
+        dto.definition = self.definition
         dto.modifiedAt = self.modifiedAt
         dto.modifiedBy = self.modifiedBy
         dto.modifiedByName = self.modifiedByName
