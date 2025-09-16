@@ -277,7 +277,10 @@ class TestWorkspaceService(unittest.TestCase):
         mock_db_get.get.side_effect = side_effect
         
         with self.assertRaises(Exception) as context:
-            WorkspacesService.save_imagery_list(self.workspace_id, JsonDataUtils.get_imagery_json_string(), self.project_group_ids)
+            WorkspacesService.save_long_form_and_imagery_definition(
+            self.workspace_id, JsonDataUtils.get_long_form_quest_json_string(),
+            JsonDataUtils.get_imagery_json_string(), self.project_group_ids
+            )
         self.assertEqual(type(context.exception).__name__, "NotFound")
         
     @patch('backend.models.postgis.workspace.db.session')
@@ -297,53 +300,21 @@ class TestWorkspaceService(unittest.TestCase):
 
         # Act: call the real method        
         with self.assertRaises(Exception) as context:
-            WorkspacesService.save_imagery_list(self.workspace_id, JsonDataUtils.get_imagery_json_string(), ['3'])
+            WorkspacesService.save_long_form_and_imagery_definition(
+            self.workspace_id, JsonDataUtils.get_long_form_quest_json_string(),
+            JsonDataUtils.get_imagery_json_string(), ['3']
+            )
         self.assertEqual(type(context.exception).__name__, "NotFound")
         
-    @patch('backend.models.postgis.workspace.db.session')
-    def test_save_workspace_imagery_create_new(self, mock_db_get):
-        # Arrange: mock the Workspace returned by db.session.get
-        mock_workspace = MagicMock(spec=Workspace)
-        mock_workspace.id = self.workspace_id
-        mock_workspace.tdeiProjectGroupId = self.project_group_ids[0]
-        
-        def side_effect(model, id):
-            if model.__name__ == 'WorkspaceImagery':
-                return None  # Simulate no existing imagery
-            elif model.__name__ == 'Workspace':
-                return mock_workspace
-            return None
-
-        mock_db_get.get.side_effect = side_effect
 
         # Act: call the real method
-        WorkspacesService.save_imagery_list(self.workspace_id, JsonDataUtils.get_imagery_json_string(), self.project_group_ids)
+        WorkspacesService.save_long_form_and_imagery_definition(
+            self.workspace_id, None,
+            JsonDataUtils.get_imagery_json_string(), self.project_group_ids
+            )
 
         # Assert: check that a new imagery was added and committed
         mock_db_get.add.assert_called_once()
-        mock_db_get.commit.assert_called_once()
-        
-    @patch('backend.models.postgis.workspace.db.session')
-    def test_save__workspace_imagery_update_existing(self, mock_db_get):
-        # Arrange: mock the Workspace returned by db.session.get
-        mock_workspace = MagicMock(spec=Workspace)
-        mock_workspace.id = self.workspace_id
-        mock_workspace.tdeiProjectGroupId = self.project_group_ids[0]
-        
-        def side_effect(model, id):
-            if model.__name__ == 'WorkspaceImagery':
-                return MagicMock()  # Simulate existing imagery
-            elif model.__name__ == 'Workspace':
-                return mock_workspace
-            return None
-        
-        mock_db_get.get.side_effect = side_effect
-
-        # Act: call the real method
-        WorkspacesService.save_imagery_list(self.workspace_id, JsonDataUtils.get_imagery_json_string(), self.project_group_ids)
-
-        # Assert: check that a new imagery was not added but changes were committed
-        mock_db_get.add.assert_not_called()
         mock_db_get.commit.assert_called_once()
         
     
@@ -360,7 +331,10 @@ class TestWorkspaceService(unittest.TestCase):
         mock_db_get.get.side_effect = side_effect
         
         with self.assertRaises(Exception) as context:
-            WorkspacesService.save_imagery_list(self.workspace_id, JsonDataUtils.get_imagery_json_string(), self.project_group_ids)
+            WorkspacesService.save_long_form_and_imagery_definition(
+            self.workspace_id, JsonDataUtils.get_long_form_quest_json_string(),
+            JsonDataUtils.get_imagery_json_string(), self.project_group_ids
+            )
         self.assertEqual(type(context.exception).__name__, "NotFound")
         
     @patch('backend.models.postgis.workspace.db.session')
@@ -380,8 +354,85 @@ class TestWorkspaceService(unittest.TestCase):
 
         # Act: call the real method        
         with self.assertRaises(Exception) as context:
-            WorkspacesService.save_imagery_list(self.workspace_id, JsonDataUtils.get_imagery_json_string(), ['3'])
+            WorkspacesService.save_long_form_and_imagery_definition(
+            self.workspace_id, JsonDataUtils.get_long_form_quest_json_string(),
+            JsonDataUtils.get_imagery_json_string(), ['3']
+            )
         self.assertEqual(type(context.exception).__name__, "NotFound")
+
+    @patch('backend.models.postgis.workspace.db.session')
+    def test_save__long_form_and_imagery_definition_both_none_already_exists(self, mock_db_get):
+        mock_workspace = MagicMock(spec=Workspace)
+        mock_workspace.id = self.workspace_id
+        mock_workspace.tdeiProjectGroupId = self.project_group_ids[0]
+        
+        def side_effect(model, id):
+            if model.__name__ == 'WorkspaceImagery':
+                return MagicMock()  # Simulate existing imagery
+            if model.__name__ == 'WorkspaceLongQuest':
+                return MagicMock()
+            elif model.__name__ == 'Workspace':
+                return mock_workspace
+            return None
+        
+        mock_db_get.get.side_effect = side_effect
+        
+        WorkspacesService.save_long_form_and_imagery_definition(
+            self.workspace_id, None,
+            None, self.project_group_ids
+        )
+        
+        self.assertTrue(True)
+        self.assertEqual(mock_db_get.add.call_count, 0)
+        self.assertEqual(mock_db_get.commit.call_count, 1)
+        
+    @patch('backend.models.postgis.workspace.db.session')
+    def test_save__long_form_and_imagery_definition_both_none_does_not_exist(self, mock_db_get):
+        mock_workspace = MagicMock(spec=Workspace)
+        mock_workspace.id = self.workspace_id
+        mock_workspace.tdeiProjectGroupId = self.project_group_ids[0]
+        
+        def side_effect(model, id):
+            if model.__name__ == 'Workspace':
+                return mock_workspace
+            return None
+        
+        mock_db_get.get.side_effect = side_effect
+        
+        WorkspacesService.save_long_form_and_imagery_definition(
+            self.workspace_id, None,
+            None, self.project_group_ids
+        )
+        
+        self.assertTrue(True)
+        self.assertEqual(mock_db_get.add.call_count, 2)
+        self.assertEqual(mock_db_get.commit.call_count, 1)
+        
+    @patch('backend.models.postgis.workspace.db.session')
+    def test_save__long_form_and_imagery_definition_both_valid_data(self, mock_db_get):
+        mock_workspace = MagicMock(spec=Workspace)
+        mock_workspace.id = self.workspace_id
+        mock_workspace.tdeiProjectGroupId = self.project_group_ids[0]
+        
+        def side_effect(model, id):
+            if model.__name__ == 'WorkspaceImagery':
+                return MagicMock()  # Simulate existing imagery
+            if model.__name__ == 'WorkspaceLongQuest':
+                return MagicMock()
+            elif model.__name__ == 'Workspace':
+                return mock_workspace
+            return None
+        
+        mock_db_get.get.side_effect = side_effect
+        
+        WorkspacesService.save_long_form_and_imagery_definition(
+            self.workspace_id, JsonDataUtils.get_long_form_quest_json_string(),
+            JsonDataUtils.get_imagery_json_string(), self.project_group_ids
+        )
+        
+        self.assertTrue(True)
+        self.assertEqual(mock_db_get.add.call_count, 0)
+        self.assertEqual(mock_db_get.commit.call_count, 1)
         
         
 if __name__ == "__main__":
