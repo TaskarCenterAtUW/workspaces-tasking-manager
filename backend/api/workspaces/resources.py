@@ -23,16 +23,7 @@ class WorkspacesRestAPI(Resource):
             return {"Error": "Authentication is not valid.", "SubCode": "Not Authorized"}, 401
 
         try:
-            workspace = WorkspacesService.get_workspace(workspace_id, authenticated_user.get("project_group_ids"))
-            dto = workspace.as_dto().to_primitive()
-            # Convert imageryList and tdeiMetadata from string to JSON if needed
-            for key in ["imageryList", "tdeiMetadata"]:
-                if key in dto and isinstance(dto[key], str):
-                    try:
-                        dto[key] = json.loads(dto[key])
-                    except Exception:
-                        pass
-            return jsonify(dto)
+            return WorkspacesService.get_workspace(workspace_id, authenticated_user.get("project_group_ids")).as_dto().to_primitive()
         except NotFound:
             return {"Error": "Workspace not found", "SubCode": "NotFound"}, 404
 
@@ -52,16 +43,6 @@ class WorkspacesRestAPI(Resource):
                 workspace.description = payload["description"]
             if "externalAppAccess" in payload:
                 workspace.externalAppAccess = payload["externalAppAccess"]
-            if "longFormQuestDef" in payload:
-                longFormdefinitionJson = payload["longFormQuestDef"]
-                if isinstance(longFormdefinitionJson, dict):
-                    longFormdefinitionJson = json.dumps(longFormdefinitionJson)
-                WorkspacesService.save_long_form_quest(workspace_id, longFormdefinitionJson, authenticated_user.get("project_group_ids"))
-            if "imageryListDef" in payload:
-                imageryListJson = payload["imageryListDef"]
-                if isinstance(imageryListJson, (dict, list)):
-                    imageryListJson = json.dumps(imageryListJson)
-                workspace.imageryList = imageryListJson
 
             workspace.update()
 
@@ -106,14 +87,7 @@ class WorkspacesListAPI(Resource):
         r = []
         for w in WorkspacesService.list_workspaces(externalAppOnly, authenticated_user.get("project_group_ids")):
 #            tdeiMetadata = {}
-            dto = w.as_dto().to_primitive()
-            # Convert imageryList and tdeiMetadata from string to JSON if needed
-            for key in ["imageryList", "tdeiMetadata"]:
-                if key in dto and isinstance(dto[key], str):
-                    try:
-                        dto[key] = json.loads(dto[key])
-                    except Exception:
-                        pass
+                        
 #            if 'lat' in request.args and 'lon' in request.args:
 #                try:
 #                    if w.tdeiMetadata is not None:
@@ -157,7 +131,7 @@ class WorkspacesListAPI(Resource):
 #            # no user location provided, so include
 #            else:
             
-            r.append(dto)
+            r.append(w.as_dto().to_primitive())
             
         return r
 
