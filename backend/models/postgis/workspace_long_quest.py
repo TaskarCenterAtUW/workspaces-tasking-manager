@@ -4,7 +4,6 @@ from backend import db
 from backend.models.dtos.workspace_long_quest_dto import WorkspaceLongQuestDTO
 from backend.models.postgis.utils import timestamp
 from backend.models.postgis.workspace import Workspace
-import json
 
 class WorkspaceLongQuest(db.Model):
     """Stores mobile app quest definitions for a workspace"""

@@ -56,9 +56,6 @@ class WorkspacesService:
         
         quest = db.session.get(WorkspaceLongQuest, workspace_id)
         
-        if quest is None:
-            return None
-        
         return quest
 
     @staticmethod
@@ -128,8 +125,5 @@ class WorkspacesService:
             raise NotFound()
             
         imagery = db.session.get(WorkspaceImagery, workspace_id)
-
-        if imagery is None:
-            return None
 
         return imagery
