@@ -1,17 +1,18 @@
 from sqlalchemy.dialects.postgresql import UUID
 
 from backend import db
-from backend.models.dtos.workspace_long_quest_dto import WorkspaceLongQuestDTO
+from backend.models.dtos.workspace_imagery_dto import WorkspaceImageryDTO
 from backend.models.postgis.utils import timestamp
 from backend.models.postgis.workspace import Workspace
 
-class WorkspaceLongQuest(db.Model):
-    """Stores mobile app quest definitions for a workspace"""
 
-    __tablename__ = "workspaces_long_quests"
+class WorkspaceImagery(db.Model):
+    """Stores imagery list for a workspace"""
+
+    __tablename__ = "workspaces_imagery"
 
     workspace_id = db.Column(db.Integer, db.ForeignKey(Workspace.id), primary_key=True)
-    definition = db.Column(db.Unicode, nullable=True, default=None) 
+    definition = db.Column(db.JSON, nullable=True, default=None)
     modifiedAt = db.Column(db.DateTime, nullable=False, default=timestamp, onupdate=timestamp)
     modifiedBy = db.Column(UUID(as_uuid=True), nullable=False)
     modifiedByName = db.Column(db.Unicode, nullable=False)
@@ -31,7 +32,7 @@ class WorkspaceLongQuest(db.Model):
         db.session.commit()
 
     def as_dto(self):
-        dto = WorkspaceLongQuestDTO()
+        dto = WorkspaceImageryDTO()
         dto.workspace_id = self.workspace_id
         dto.definition = self.definition
         dto.modifiedAt = self.modifiedAt

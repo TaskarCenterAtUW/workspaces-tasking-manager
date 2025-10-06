@@ -240,6 +240,9 @@ class EnvironmentConfig:
     # Ohsome Stats Token
     OHSOME_STATS_TOKEN = os.getenv("OHSOME_STATS_TOKEN", None)
 
+    WS_IMAGERY_SCHEMA_URL = os.getenv("WS_IMAGERY_SCHEMA_URL", None)
+    WS_LONGFORM_SCHEMA_URL = os.getenv("WS_LONGFORM_SCHEMA_URL", None)
+
 
 class TestEnvironmentConfig(EnvironmentConfig):
     POSTGRES_TEST_DB = os.getenv("POSTGRES_TEST_DB", None)

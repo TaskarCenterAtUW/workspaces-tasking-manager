@@ -1,6 +1,8 @@
 import json
 import geojson
+import jsonschema
 from backend.services.users.authentication_service import token_auth
+from backend.config import EnvironmentConfig
 
 from typing import cast
 from geoalchemy2 import Geometry, Geography
@@ -14,6 +16,7 @@ from backend.models.postgis.utils import NotFound
 from backend.models.postgis.workspace import Workspace
 from backend.models.postgis.workspace_long_quest import WorkspaceLongQuest
 from backend.services.workspaces_service import WorkspacesService
+from backend.utils.validate_schema import validate_json_against_schema
 
 class WorkspacesRestAPI(Resource):
     @token_auth.login_required
@@ -23,7 +26,13 @@ class WorkspacesRestAPI(Resource):
             return {"Error": "Authentication is not valid.", "SubCode": "Not Authorized"}, 401
 
         try:
-            return WorkspacesService.get_workspace(workspace_id, authenticated_user.get("project_group_ids")).as_dto().to_primitive()
+            workspace =  WorkspacesService.get_workspace(workspace_id, authenticated_user.get("project_group_ids")).as_dto().to_primitive()
+            imagery_list = WorkspacesService.get_workspace_imagery(workspace.get("id"), authenticated_user.get("project_group_ids"))
+            longform_quest_obj = WorkspacesService.get_workspace_long_form_quest(workspace.get("id"), authenticated_user.get("project_group_ids"))
+            longform_quest = longform_quest_obj.as_dto() if longform_quest_obj else None
+            workspace["imageryListDef"] = imagery_list.definition if imagery_list else None
+            workspace["longFormQuestDef"] = json.loads(longform_quest.definition) if longform_quest and longform_quest.definition else None
+            return workspace
         except NotFound:
             return {"Error": "Workspace not found", "SubCode": "NotFound"}, 404
 
@@ -34,6 +43,7 @@ class WorkspacesRestAPI(Resource):
             return {"Error": "Authentication is not valid.", "SubCode": "Not Authorized"}, 401
 
         try:
+            error_type = None
             payload = request.get_json()
             workspace = WorkspacesService.get_workspace(workspace_id, authenticated_user.get("project_group_ids"))
 
@@ -43,11 +53,39 @@ class WorkspacesRestAPI(Resource):
                 workspace.description = payload["description"]
             if "externalAppAccess" in payload:
                 workspace.externalAppAccess = payload["externalAppAccess"]
+            
+            if "longFormQuestDef" in payload and "imageryListDef" in payload:
+                longFormdefinitionJson = payload["longFormQuestDef"]
+                imageryListJson = payload["imageryListDef"]
+
+                error_type = "Long form quest definition"
+                if isinstance(longFormdefinitionJson, dict) and longFormdefinitionJson:
+                    validate_json_against_schema(longFormdefinitionJson, EnvironmentConfig.WS_LONGFORM_SCHEMA_URL)
+                elif longFormdefinitionJson is None:
+                    pass  # Do nothing if None
+                else:
+                    return {"Error": f"{error_type}: Must be a JSON object or null",  "SubCode": "InvalidData"}, 400
+
+                error_type = "Imagery list definition"
+                if isinstance(imageryListJson, list) and imageryListJson:
+                    validate_json_against_schema(imageryListJson, EnvironmentConfig.WS_IMAGERY_SCHEMA_URL)
+                elif imageryListJson is None:
+                    pass  # Do nothing if None
+                else:
+                    return {"Error": f"{error_type}: Must be a JSON array or null",  "SubCode": "InvalidData"}, 400
+                
+                WorkspacesService.save_long_form_and_imagery_definition(
+                    workspace_id, 
+                    json.dumps(longFormdefinitionJson) if longFormdefinitionJson else None, 
+                    imageryListJson if imageryListJson else None, 
+                    authenticated_user.get("project_group_ids")
+                )
 
             workspace.update()
 
             return Response(status=204)
-
+        except jsonschema.ValidationError as e:
+            return {"Error": f"Invalid {error_type}: {e.message} at {list(e.path)}",  "SubCode": "InvalidData"}, 400
         except NotFound:
             return {"Error": "Workspace not found", "SubCode": "NotFound"}, 404
 
@@ -193,8 +231,11 @@ class WorkspacesLongFormQuestAPI(Resource):
             return {"Error": "User is not authenticated", "SubCode": "Not Authorized"}, 401
         
         try:
+            longform_quest = WorkspacesService.get_workspace_long_form_quest(workspace_id, authenticated_user.get("project_group_ids"))
+            if longform_quest is None:
+                raise NotFound()
             return Response(
-                response=WorkspacesService.get_workspace_long_form_quest(workspace_id, authenticated_user.get("project_group_ids")).definition,
+                response=longform_quest.definition,
                 status=200,
                 mimetype="application/json"
             )

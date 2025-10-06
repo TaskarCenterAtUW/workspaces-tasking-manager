@@ -1,16 +1,17 @@
 from schematics import Model
 from schematics.types import (
-    StringType,
     BaseType,
+    StringType,
     IntType,
+    ListType,
     DictType,
     UTCDateTimeType,
     UUIDType,
 )
 
-class WorkspaceLongQuestDTO(Model):
+class WorkspaceImageryDTO(Model):
     workspace_id = IntType()
-    definition  = DictType(StringType, BaseType)
+    definition = ListType(DictType(StringType, BaseType))
     modifiedAt = UTCDateTimeType()
     modifiedBy = UUIDType()
     modifiedByName = StringType()

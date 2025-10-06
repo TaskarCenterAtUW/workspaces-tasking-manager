@@ -56,5 +56,5 @@ class Workspace(db.Model):
         dto.createdByName = self.createdByName
         dto.externalAppAccess = self.externalAppAccess
         dto.kartaViewToken = self.kartaViewToken
-
+        
         return dto
