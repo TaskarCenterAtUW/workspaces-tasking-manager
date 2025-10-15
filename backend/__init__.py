@@ -395,7 +395,8 @@ def add_api_endpoints(app):
         WorkspacesMineAPI,
         WorkspacesListAPI,
         WorkspacesStaticQuestAPI,
-        WorkspacesLongFormQuestAPI
+        WorkspacesLongFormQuestAPI,
+        WorkspacesLongFormQuestSettingsAPI
     )
 
     # Projects REST endpoint
@@ -1019,5 +1020,10 @@ def add_api_endpoints(app):
     api.add_resource(
         WorkspacesLongFormQuestAPI,
         format_url("workspaces/<int:workspace_id>/quests/long"),
-        methods=["GET", "PUT"]
+        methods=["GET"]
+    )
+    api.add_resource(
+        WorkspacesLongFormQuestSettingsAPI,
+        format_url("workspaces/<int:workspace_id>/quests/long/settings"),
+        methods=["GET", "PATCH"]
     )
