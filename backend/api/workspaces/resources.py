@@ -12,33 +12,37 @@ from flask import Response, jsonify
 from flask_restful import Resource, current_app, request
 from schematics.exceptions import DataError
 
+from backend.models.dtos.workspace_long_quest_dto import (
+    QuestDefinitionType,
+    WorkspaceLongQuestDTO
+)
 from backend.models.postgis.utils import NotFound
 from backend.models.postgis.workspace import Workspace
 from backend.models.postgis.workspace_long_quest import WorkspaceLongQuest
 from backend.services.workspaces_service import WorkspacesService
 from backend.utils.validate_schema import validate_json_against_schema
 
+
 class WorkspacesRestAPI(Resource):
     @token_auth.login_required
     def get(self, workspace_id: int):
-        authenticated_user = token_auth.current_user()      
+        authenticated_user = token_auth.current_user()
         if authenticated_user is None:
             return {"Error": "Authentication is not valid.", "SubCode": "Not Authorized"}, 401
 
         try:
             workspace =  WorkspacesService.get_workspace(workspace_id, authenticated_user.get("project_group_ids")).as_dto().to_primitive()
             imagery_list = WorkspacesService.get_workspace_imagery(workspace.get("id"), authenticated_user.get("project_group_ids"))
-            longform_quest_obj = WorkspacesService.get_workspace_long_form_quest(workspace.get("id"), authenticated_user.get("project_group_ids"))
-            longform_quest = longform_quest_obj.as_dto() if longform_quest_obj else None
+            longform_quest_def = WorkspacesService.get_long_form_quest_def(workspace.get("id"), authenticated_user.get("project_group_ids"))
             workspace["imageryListDef"] = imagery_list.definition if imagery_list else None
-            workspace["longFormQuestDef"] = json.loads(longform_quest.definition) if longform_quest and longform_quest.definition else None
+            workspace["longFormQuestDef"] = json.loads(longform_quest_def) if longform_quest_def else None
             return workspace
         except NotFound:
             return {"Error": "Workspace not found", "SubCode": "NotFound"}, 404
 
     @token_auth.login_required
     def patch(self, workspace_id: int):
-        authenticated_user = token_auth.current_user()      
+        authenticated_user = token_auth.current_user()
         if authenticated_user is None:
             return {"Error": "Authentication is not valid.", "SubCode": "Not Authorized"}, 401
 
@@ -53,18 +57,9 @@ class WorkspacesRestAPI(Resource):
                 workspace.description = payload["description"]
             if "externalAppAccess" in payload:
                 workspace.externalAppAccess = payload["externalAppAccess"]
-            
-            if "longFormQuestDef" in payload and "imageryListDef" in payload:
-                longFormdefinitionJson = payload["longFormQuestDef"]
-                imageryListJson = payload["imageryListDef"]
 
-                error_type = "Long form quest definition"
-                if isinstance(longFormdefinitionJson, dict) and longFormdefinitionJson:
-                    validate_json_against_schema(longFormdefinitionJson, EnvironmentConfig.WS_LONGFORM_SCHEMA_URL)
-                elif longFormdefinitionJson is None:
-                    pass  # Do nothing if None
-                else:
-                    return {"Error": f"{error_type}: Must be a JSON object or null",  "SubCode": "InvalidData"}, 400
+            if "imageryListDef" in payload:
+                imageryListJson = payload["imageryListDef"]
 
                 error_type = "Imagery list definition"
                 if isinstance(imageryListJson, list) and imageryListJson:
@@ -73,11 +68,10 @@ class WorkspacesRestAPI(Resource):
                     pass  # Do nothing if None
                 else:
                     return {"Error": f"{error_type}: Must be a JSON array or null",  "SubCode": "InvalidData"}, 400
-                
-                WorkspacesService.save_long_form_and_imagery_definition(
-                    workspace_id, 
-                    json.dumps(longFormdefinitionJson) if longFormdefinitionJson else None, 
-                    imageryListJson if imageryListJson else None, 
+
+                WorkspacesService.save_imagery_definition(
+                    workspace_id,
+                    imageryListJson if imageryListJson else None,
                     authenticated_user.get("project_group_ids")
                 )
 
@@ -91,7 +85,7 @@ class WorkspacesRestAPI(Resource):
 
     @token_auth.login_required
     def delete(self, workspace_id: int):
-        authenticated_user = token_auth.current_user()      
+        authenticated_user = token_auth.current_user()
         if authenticated_user is None:
             return {"Error": "Authentication is not valid.", "SubCode": "Not Authorized"}, 401
 
@@ -109,30 +103,30 @@ class WorkspacesMineAPI(Resource):
 class WorkspacesListAPI(Resource):
     @token_auth.login_required
     def get(self):
-        authenticated_user = token_auth.current_user()      
+        authenticated_user = token_auth.current_user()
         if authenticated_user is None:
             return {"Error": "Authentication is not valid.", "SubCode": "Not Authorized"}, 401
 
         externalAppOnly = False
         if 'gig_only' in request.args:
-            externalAppOnly = (request.args['gig_only'] == "true" 
+            externalAppOnly = (request.args['gig_only'] == "true"
                                or request.args['gig_only'] == "1")
 
         if 'externalAppAccess' in request.args:
-            externalAppOnly = (request.args['externalAppAccess'] == "true" 
+            externalAppOnly = (request.args['externalAppAccess'] == "true"
                                or request.args['externalAppAccess'] == "1")
-        
+
         r = []
         for w in WorkspacesService.list_workspaces(externalAppOnly, authenticated_user.get("project_group_ids")):
 #            tdeiMetadata = {}
-                        
+
 #            if 'lat' in request.args and 'lon' in request.args:
 #                try:
 #                    if w.tdeiMetadata is not None:
 #                        tdeiMetadata = json.loads(w.tdeiMetadata)
 #                except json.JSONDecodeError:
 #                    pass
-                    
+
 #                if ('metadata' in tdeiMetadata and
 #                    'dataset_detail' in tdeiMetadata['metadata'] and
 #                    'dataset_area' in tdeiMetadata['metadata']['dataset_detail']):
@@ -148,12 +142,12 @@ class WorkspacesListAPI(Resource):
 #                                if 'radius' in request.args:
 #                                    try:
 #                                        userLocationGeom = ST_Buffer(
-#                                                                ST_SetSRID(ST_MakePoint(request.args['lon'], request.args['lat']), 4326), 
+#                                                                ST_SetSRID(ST_MakePoint(request.args['lon'], request.args['lat']), 4326),
 #                                                                int(request.args['radius'])
 #                                                            )
 #                                    except ValueError:
 #                                        pass
-                            
+
 #                                # dataset area intersects with user location
 #                                if ST_Intersects(datasetAreaGeom, userLocationGeom):
 #                                    r.append(w.as_dto().to_primitive())
@@ -165,17 +159,17 @@ class WorkspacesListAPI(Resource):
 #                # dataset has no metadata, include
 #                else:
 #                    r.append(w.as_dto().to_primitive())
-#                    
+#
 #            # no user location provided, so include
 #            else:
-            
+
             r.append(w.as_dto().to_primitive())
-            
+
         return r
 
     @token_auth.login_required
     def post(self):
-        authenticated_user = token_auth.current_user()      
+        authenticated_user = token_auth.current_user()
         if authenticated_user is None:
             return {"Error": "User is not authenticated", "SubCode": "Not Authorized"}, 401
 
@@ -226,28 +220,65 @@ class WorkspacesStaticQuestAPI(Resource):
 class WorkspacesLongFormQuestAPI(Resource):
     @token_auth.login_required
     def get(self, workspace_id: int):
-        authenticated_user = token_auth.current_user()      
+        authenticated_user = token_auth.current_user()
         if authenticated_user is None:
             return {"Error": "User is not authenticated", "SubCode": "Not Authorized"}, 401
-        
+
         try:
-            longform_quest = WorkspacesService.get_workspace_long_form_quest(workspace_id, authenticated_user.get("project_group_ids"))
-            if longform_quest is None:
-                raise NotFound()
+            definition = WorkspacesService.get_long_form_quest_def(
+                workspace_id,
+                authenticated_user.get("project_group_ids")
+            )
+
+            if definition is None:
+                return Response(status=204)
+
             return Response(
-                response=longform_quest.definition,
+                response=definition,
                 status=200,
                 mimetype="application/json"
             )
         except NotFound as e:
             return Response(status=204)
 
+
+class WorkspacesLongFormQuestSettingsAPI(Resource):
     @token_auth.login_required
-    def put(self, workspace_id: int):
-        authenticated_user = token_auth.current_user()      
-        if authenticated_user is None:
+    def get(self, workspace_id: int):
+        user = token_auth.current_user()
+        if user is None:
             return {"Error": "User is not authenticated", "SubCode": "Not Authorized"}, 401
 
-        definitionJson = request.get_data(True, True)
-        WorkspacesService.save_long_form_quest(workspace_id, definitionJson, authenticated_user.get("project_group_ids"))
+        try:
+            longform_quest = WorkspacesService.get_long_form_quest(workspace_id, user.get("project_group_ids"))
+
+            if longform_quest is not None:
+                return longform_quest.as_dto().to_primitive()
+
+            dto = WorkspaceLongQuestDTO()
+            dto.workspace_id = workspace_id
+            dto.type = QuestDefinitionType.NONE.name
+
+            return dto.to_primitive()
+        except NotFound as e:
+            return Response(status=204)
+
+    @token_auth.login_required
+    def patch(self, workspace_id: int):
+        user = token_auth.current_user()
+        if user is None:
+            return {"Error": "User is not authenticated", "SubCode": "Not Authorized"}, 401
+
+        payload = request.get_json()
+        dto = WorkspaceLongQuestDTO()
+        dto.workspace_id = workspace_id
+        dto.type = payload["type"]
+
+        if "definition" in payload and payload["definition"]:
+            dto.definition = payload["definition"]
+        if "url" in payload and payload["url"]:
+            dto.url = payload["url"]
+
+        WorkspacesService.save_long_form_quest(dto, user)
+
         return Response(status=204)
